@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 · AI 互动</title>
+    <title>语匣 v3 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -683,15 +683,16 @@
         }
         .chat-messages .msg .think-block.open .think-arrow { transform: rotate(90deg); }
         /* think-body：收起直接 display:none，展开 block（max-height 方案在移动端受 pre-wrap/padding 影响失效，改用 display 切换最稳）*/
+        /* !important 兜底：防止任何来源的空 think-body 撑出空白高度 */
         .chat-messages .msg .think-body {
-            display: none;
+            display: none !important;
             padding: 0 9px;
             line-height: 1.55;
             white-space: pre-wrap;
             word-break: break-word;
         }
         .chat-messages .msg .think-block.open .think-body {
-            display: block;
+            display: block !important;
             padding: 6px 9px 7px;
             border-top: 1px solid rgba(160, 190, 205, 0.3);
         }
@@ -1798,9 +1799,9 @@
                 if (m.streaming) {
                     return `<div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div>`;
                 }
-                // 思考块（若有）：折叠面板，默认收起
+                // 思考块（若有）：折叠面板，默认收起；trim 判空，纯空白不渲染
                 let thinkHtml = '';
-                if (m.think) {
+                if (m.think && String(m.think).trim()) {
                     const t = escHtml(m.think);
                     thinkHtml = `<div class="think-block${m.thinkOpen ? ' open' : ''}" onclick="this.classList.toggle('open')">
                         <div class="think-head"><span class="think-ico">💭</span><span>思考过程</span><span class="think-arrow">▶</span></div>
@@ -2441,7 +2442,8 @@
             data.chats[charId] = [
                 { role: 'assistant', content: '你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
                 { role: 'user', content: '今天有点累呢…', timestamp: Date.now() - 3000000 },
-                { role: 'assistant', content: '辛苦了～ 记得照顾好自己，累了就歇一歇。我在这里陪你呢。', timestamp: Date.now() - 2400000 },
+                { role: 'assistant', content: '辛苦了～ 记得照顾好自己，累了就歇一歇。我在这里陪你呢。',
+                  think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
             ];
             // 示例世界书
             data.worldBooks.push({
@@ -2473,16 +2475,6 @@
 
         // 点击模态框外部关闭
         modalMask.addEventListener('click', (e) => {
-            if (e.target === modalMask) {
-                modalMask.classList.remove('open');
-            }
-        });
-
-        console.log('语匣已启动');
-        console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
-    </script>
-</body>
-</html>   modalMask.addEventListener('click', (e) => {
             if (e.target === modalMask) {
                 modalMask.classList.remove('open');
             }
