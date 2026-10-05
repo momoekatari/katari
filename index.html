@@ -682,24 +682,18 @@
             opacity: 0.6;
         }
         .chat-messages .msg .think-block.open .think-arrow { transform: rotate(90deg); }
-        /* think-body：max-height 过渡，收起 0 / 展开 800px，平滑动画（display 无法过渡，故改用 max-height）*/
+        /* think-body：收起直接 display:none，展开 block（max-height 方案在移动端受 pre-wrap/padding 影响失效，改用 display 切换最稳）*/
         .chat-messages .msg .think-body {
-            max-height: 0;
-            overflow: hidden;
+            display: none;
             padding: 0 9px;
             line-height: 1.55;
             white-space: pre-wrap;
             word-break: break-word;
-            border-top: 1px solid transparent;
-            transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding-top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
-                        border-top-color 0.32s ease;
         }
         .chat-messages .msg .think-block.open .think-body {
-            max-height: 800px;
+            display: block;
             padding: 6px 9px 7px;
-            border-top-color: rgba(160, 190, 205, 0.3);
+            border-top: 1px solid rgba(160, 190, 205, 0.3);
         }
         .chat-messages .msg.user .think-block.open .think-body {
             border-top-color: rgba(255, 255, 255, 0.22);
@@ -2479,6 +2473,16 @@
 
         // 点击模态框外部关闭
         modalMask.addEventListener('click', (e) => {
+            if (e.target === modalMask) {
+                modalMask.classList.remove('open');
+            }
+        });
+
+        console.log('语匣已启动');
+        console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
+    </script>
+</body>
+</html>   modalMask.addEventListener('click', (e) => {
             if (e.target === modalMask) {
                 modalMask.classList.remove('open');
             }
