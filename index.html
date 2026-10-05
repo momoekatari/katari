@@ -646,6 +646,58 @@
             fill: none;
         }
 
+        /* ===== 思考块（think / thought / thinking / reasoning_content）===== */
+        .chat-messages .msg .think-block {
+            margin: 0 0 6px;
+            border-radius: 10px;
+            background: rgba(160, 190, 205, 0.16);
+            border: 1px solid rgba(160, 190, 205, 0.4);
+            overflow: hidden;
+            font-size: 12.5px;
+            color: var(--ink-soft);
+        }
+        .chat-messages .msg.user .think-block {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .chat-messages .msg .think-head {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 9px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 11.5px;
+            letter-spacing: 0.2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chat-messages .msg .think-head .think-ico { font-size: 12px; }
+        .chat-messages .msg .think-head .think-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+            font-size: 9px;
+            opacity: 0.6;
+        }
+        .chat-messages .msg .think-block.open .think-arrow { transform: rotate(90deg); }
+        .chat-messages .msg .think-body {
+            padding: 0 9px 7px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+            display: none;
+            border-top: 1px solid rgba(160, 190, 205, 0.3);
+            padding-top: 6px;
+        }
+        .chat-messages .msg.user .think-body { border-top-color: rgba(255, 255, 255, 0.22); }
+        .chat-messages .msg .think-block.open .think-body { display: block; }
+        .chat-messages .msg .think-body.streaming-cursor::after {
+            content: '▋';
+            animation: thinkCursor 0.8s infinite;
+            opacity: 0.5;
+        }
+        @keyframes thinkCursor { 0%,49%{opacity:0.5} 50%,100%{opacity:0} }
+
         .chat-input-bar {
             display: flex;
             align-items: center;
@@ -1739,7 +1791,16 @@
                 if (m.streaming) {
                     return `<div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div>`;
                 }
-                return `<div class="msg ${cls}">${content}</div>`;
+                // 思考块（若有）：折叠面板，默认收起
+                let thinkHtml = '';
+                if (m.think) {
+                    const t = escHtml(m.think);
+                    thinkHtml = `<div class="think-block${m.thinkOpen ? ' open' : ''}" onclick="this.classList.toggle('open')">
+                        <div class="think-head"><span class="think-ico">💭</span><span>思考过程</span><span class="think-arrow">▶</span></div>
+                        <div class="think-body">${t}</div>
+                    </div>`;
+                }
+                return `<div class="msg ${cls}">${thinkHtml}${content}</div>`;
             }).join('');
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
@@ -1770,6 +1831,68 @@
 
             let streamMsg = null;
             let streamed = '';
+            let streamEl = null;
+            // --- 思考分流状态机（跨 SSE chunk 安全）---
+            // 兼容：delta.reasoning_content（DeepSeek R1 原生）+ 正文内 <think>/<thought>/<thinking>
+            let thinkBuf = '';
+            let thinkTag = null;
+            let pendingTag = '';
+            const THINK_OPEN_RE = /<(think|thought|thinking)\b[^>]*>/i;
+            // 从 content delta 分流出思考/正文增量（状态机，可跨 chunk）
+            function feedBody(delta) {
+                let thinkInc = '', bodyInc = '';
+                let buf = pendingTag + delta;
+                pendingTag = '';
+                let i = 0;
+                while (i < buf.length) {
+                    if (thinkTag) {
+                        const closeRe = new RegExp('</' + thinkTag + '\\s*>', 'i');
+                        const m = closeRe.exec(buf.slice(i));
+                        if (m) {
+                            thinkInc += buf.slice(i, i + m.index);
+                            i += m.index + m[0].length;
+                            thinkTag = null;
+                        } else {
+                            const tail = buf.slice(i);
+                            const lt = tail.lastIndexOf('<');
+                            if (lt > -1 && tail.length - lt < 14) { thinkInc += tail.slice(0, lt); pendingTag = tail.slice(lt); }
+                            else thinkInc += tail;
+                            i = buf.length;
+                        }
+                    } else {
+                        const m = THINK_OPEN_RE.exec(buf.slice(i));
+                        if (m) {
+                            bodyInc += buf.slice(i, i + m.index);
+                            i += m.index + m[0].length;
+                            thinkTag = m[1].toLowerCase();
+                        } else {
+                            const tail = buf.slice(i);
+                            const lt = tail.lastIndexOf('<');
+                            if (lt > -1 && tail.length - lt < 14) { bodyInc += tail.slice(0, lt); pendingTag = tail.slice(lt); }
+                            else bodyInc += tail;
+                            i = buf.length;
+                        }
+                    }
+                }
+                return { thinkInc, bodyInc };
+            }
+            // 流式渲染：思考块（展开+光标）+ 正文
+            function updateStreamEl() {
+                if (!streamEl) return;
+                let html = '';
+                if (thinkBuf) {
+                    html += `<div class="think-block open"><div class="think-head"><span class="think-ico">💭</span><span>思考中…</span><span class="think-arrow">▶</span></div><div class="think-body streaming-cursor">${escHtml(thinkBuf)}</div></div>`;
+                }
+                if (streamed) {
+                    html += `<span>${escHtml(streamed)}</span>`;
+                } else if (!thinkBuf) {
+                    html = `<span class="typing-dots"><i></i><i></i><i></i></span>`;
+                } else {
+                    html += `<span style="font-size:11px;opacity:0.55">正在组织回复…</span>`;
+                }
+                streamEl.innerHTML = html;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
 
             try {
                 // 构建系统提示
@@ -1812,8 +1935,13 @@
                 streamMsg = { role: 'assistant', content: '', timestamp: Date.now(), streaming: true };
                 data.chats[currentCharId].push(streamMsg);
                 renderMessages(currentCharId);
-                let streamEl = chatMessages.querySelector('.msg.streaming');
+                streamEl = chatMessages.querySelector('.msg.streaming');
                 streamed = '';
+                thinkBuf = '';
+                thinkTag = null;
+                pendingTag = '';
+
+                // 调用 API（流式 SSE）
 
                 // 调用 API（流式 SSE）
                 const resp = await fetch(api.url + '/chat/completions', {
@@ -1838,7 +1966,7 @@
 
                 const ctype = (resp.headers.get('content-type') || '').toLowerCase();
                 if (ctype.includes('event-stream')) {
-                    // SSE 流式：逐字写入气泡
+                    // SSE 流式：逐字写入气泡（思考 + 正文 分流）
                     const reader = resp.body.getReader();
                     const decoder = new TextDecoder('utf-8');
                     const NL = String.fromCharCode(10);
@@ -1856,24 +1984,54 @@
                             if (payload === '[DONE]') { buffer = ''; break; }
                             try {
                                 const json = JSON.parse(payload);
-                                const delta = json.choices?.[0]?.delta?.content || '';
-                                if (delta) {
-                                    streamed += delta;
-                                    if (streamEl) streamEl.textContent = streamed;
-                                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                                const delta = json.choices?.[0]?.delta;
+                                if (!delta) continue;
+                                // ① 原生思考字段（DeepSeek R1 等）
+                                const rc = delta.reasoning_content || delta.reasoning || '';
+                                if (rc) { thinkBuf += rc; }
+                                // ② 正文（可能内嵌  结构）
+                                const dc = delta.content || '';
+                                if (dc) {
+                                    const { thinkInc, bodyInc } = feedBody(dc);
+                                    if (thinkInc) thinkBuf += thinkInc;
+                                    if (bodyInc) streamed += bodyInc;
                                 }
+                                // 流式中如有正文开始流出，思考块自动收起（贴在上方）
+                                updateStreamEl();
                             } catch (_) { /* 不完整 JSON，等下一块 */ }
                         }
                     }
+                    // 收尾：标签跨 chunk 未闭合时，残余 pendingTag 归入对应流
+                    if (pendingTag) {
+                        if (thinkTag) thinkBuf += pendingTag; else streamed += pendingTag;
+                        pendingTag = '';
+                    }
+                    // 正文里仍可能有残留的关闭标签，清掉
+                    streamed = streamed.replace(/<\/?(think|thought|thinking)\b[^>]*>/gi, '').replace(/<\/?(?:reasoning|think_signature)\b[^>]*>/gi, '');
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
-                    streamed = json.choices?.[0]?.message?.content || '';
-                    if (streamEl) streamEl.textContent = streamed;
+                    const msg0 = json.choices?.[0]?.message;
+                    thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
+                    streamed = (msg0?.content || '').replace(/<\/?(think|thought|thinking)\b[^>]*>/gi, '');
+                    // 若正文里仍夹有思考标签内容，提取出来
+                    const mc = (msg0?.content || '').match(THINK_OPEN_RE);
+                    if (mc) {
+                        const closeRe = new RegExp('</' + mc[1] + '\\s*>', 'i');
+                        const full = msg0.content;
+                        const startIdx = full.search(THINK_OPEN_RE);
+                        const closeM = closeRe.exec(full.slice(startIdx));
+                        if (closeM) {
+                            const innerStart = startIdx + mc[0].length;
+                            const innerEnd = startIdx + closeM.index;
+                            thinkBuf += full.slice(innerStart, innerEnd);
+                        }
+                    }
                 }
 
-                // 收尾落库
+                // 收尾落库：思考段存进消息（不回送给 API，省 token）
                 streamMsg.content = streamed || '（没有收到回复）';
+                if (thinkBuf) streamMsg.think = thinkBuf.trim();
                 delete streamMsg.streaming;
                 saveData();
                 renderMessages(currentCharId);
@@ -1883,6 +2041,7 @@
                 if (streamMsg) {
                     if (streamed) {
                         streamMsg.content = streamed;
+                        if (thinkBuf) streamMsg.think = thinkBuf.trim();
                         delete streamMsg.streaming;
                     } else {
                         const arr = data.chats[currentCharId] || [];
@@ -2309,14 +2468,6 @@
         modalMask.addEventListener('click', (e) => {
             if (e.target === modalMask) {
                 modalMask.classList.remove('open');
-            }
-        });
-
-        console.log('语匣已启动');
-        console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
-    </script>
-</body>
-</html>ve('open');
             }
         });
 
