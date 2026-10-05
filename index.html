@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v4 · AI 互动</title>
+    <title>语匣 v6 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -708,34 +708,7 @@
         .chat-messages .msg-row.user .msg-bubble-wrap {
             align-items: flex-end;
         }
-        /* ===== 思考浮层（thinkOverlay，全局）===== */
-        #thinkOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            z-index: 999;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        #thinkOverlay.show {
-            display: flex;
-        }
-        #thinkContent {
-            background: var(--paper);
-            color: var(--ink);
-            padding: 20px;
-            border-radius: var(--radius-sm);
-            max-width: 500px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            line-height: 1.6;
-            font-size: 14px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
+        /* 思考浮层样式全部用内联 style 写在 #thinkOverlay 标签上，不在这里定义 */
         .chat-input-bar {
             display: flex;
             align-items: center;
@@ -1846,32 +1819,42 @@
             }).join('');
 
             // 绑定助手头像双击 → 弹出思考浮层（按 data-msg-idx 回查消息 think）
+            // 手机端原生 dblclick 不生效，改用 200ms 内两次 click 模拟双击
             chatMessages.querySelectorAll('.msg-avatar.has-think').forEach(el => {
-                el.addEventListener('dblclick', (e) => {
-                    e.preventDefault();
-                    const idx = parseInt(el.getAttribute('data-msg-idx'), 10);
-                    const m = msgs[idx];
-                    // 防御：流式消息可能还没存 think，或索引越界
-                    if (!m || !m.think) return;
-                    const text = String(m.think).trim();
-                    if (text) showThinkOverlay(m.think);
+                let lastTap = 0;
+                el.addEventListener('click', (e) => {
+                    const now = Date.now();
+                    if (now - lastTap < 300) {
+                        // 双击触发
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const idx = parseInt(el.getAttribute('data-msg-idx'), 10);
+                        const m = msgs[idx];
+                        // 防御：流式消息可能还没存 think，或索引越界，绝不报错
+                        if (!m || !m.think) { lastTap = 0; return; }
+                        const text = String(m.think).trim();
+                        if (text) showThinkOverlay(m.think);
+                        lastTap = 0;
+                    } else {
+                        lastTap = now;
+                    }
                 });
             });
 
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // 思考浮层：显示 / 关闭
+        // 思考浮层：显示 / 关闭（直接操作 display，不用 class，避免内联/CSS 优先级冲突）
         function showThinkOverlay(text) {
             const overlay = document.getElementById('thinkOverlay');
             const cont = document.getElementById('thinkContent');
             if (!overlay || !cont) return;
             cont.textContent = text;
-            overlay.classList.add('show');
+            overlay.style.display = 'flex';
         }
         function hideThinkOverlay() {
             const overlay = document.getElementById('thinkOverlay');
-            if (overlay) overlay.classList.remove('show');
+            if (overlay) overlay.style.display = 'none';
         }
 
         // 发送消息
@@ -2551,12 +2534,14 @@
             }
         });
 
-        // 思考浮层：点击空白（遮罩本身）关闭
+        // 思考浮层：点 ✕ 关闭按钮 或 点浮层空白处 关闭
         const thinkOverlay = document.getElementById('thinkOverlay');
+        const thinkCloseBtn = document.getElementById('thinkCloseBtn');
         if (thinkOverlay) {
             thinkOverlay.addEventListener('click', (e) => {
-                if (e.target === thinkOverlay) {
-                    hideThinkOverlay();
+                // 点 ✕ 按钮或点到浮层背景（非文字内容）都关
+                if (e.target === thinkOverlay || e.target === thinkCloseBtn) {
+                    thinkOverlay.style.display = 'none';
                 }
             });
         }
@@ -2564,9 +2549,10 @@
         console.log('语匣已启动');
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
-    <!-- 思考过程浮层（全局，双击助手头像弹出；display 由 .show 类控制）-->
-    <div id="thinkOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; align-items:center; justify-content:center; padding:20px;">
-        <div id="thinkContent" style="background:var(--paper); color:var(--ink); padding:20px; border-radius:var(--radius-sm); max-width:500px; max-height:80vh; overflow-y:auto; white-space:pre-wrap; line-height:1.6; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,0.3);"></div>
+    <!-- 思考过程浮层：纯文字 + 半透明冰蓝底，铺满屏幕留小边距，无卡片 -->
+    <div id="thinkOverlay" style="display:none; position:fixed; inset:0; background:rgba(91,155,181,0.35); z-index:9999; padding:16px; box-sizing:border-box; overflow-y:auto;">
+        <div id="thinkContent" style="color:var(--ink); white-space:pre-wrap; word-break:break-word; line-height:1.7; font-size:15px; padding-top:36px;"></div>
+        <div id="thinkCloseBtn" style="position:fixed; top:14px; right:16px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.55); color:var(--ink); display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,0.15);">✕</div>
     </div>
 </body>
 </html>
