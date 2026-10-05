@@ -1451,14 +1451,9 @@
                 </div>
                 <div class="form-group">
                     <label>模型</label>
-                    <div style="display:flex;gap:8px;">
-                        <select id="apiModel" style="flex:1;">
-                            <option value="">— 请先拉取模型 —</option>
-                            ${(api?.model ? `<option value="${escHtml(api.model)}" selected>${escHtml(api.model)}</option>` : '')}
-                        </select>
-                        <button class="btn btn-sm btn-soft" id="fetchModelsBtn">拉取</button>
-                    </div>
+                    <button class="btn btn-sm btn-soft" id="fetchModelsBtn" style="width:100%;">拉取模型</button>
                     <div id="modelList" class="model-list mt-8"></div>
+                    <div class="text-muted" style="font-size:12px;margin-top:6px;">${api?.model ? '当前：' + escHtml(api.model) + '（可重新拉取后更换）' : '拉取后点选一个模型'}</div>
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">取消</button>
@@ -1470,7 +1465,6 @@
 
             // 拉取模型
             const fetchBtn = document.getElementById('fetchModelsBtn');
-            const modelSelect = document.getElementById('apiModel');
             const modelListDiv = document.getElementById('modelList');
 
             fetchBtn.addEventListener('click', async () => {
@@ -1496,7 +1490,7 @@
                         el.addEventListener('click', () => {
                             modelListDiv.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
                             el.classList.add('active');
-                            modelSelect.value = el.dataset.model;
+                            
                         });
                     });
                     // 如果之前有选中的模型，高亮
@@ -1521,7 +1515,8 @@
                 const name = document.getElementById('apiName').value.trim() || '未命名';
                 const url = document.getElementById('apiUrl').value.trim();
                 const key = document.getElementById('apiKey').value.trim();
-                const model = document.getElementById('apiModel').value.trim() || '';
+                const activeChip = document.querySelector('.model-chip.active');
+                const model = activeChip ? activeChip.dataset.model : (api?.model || '');
 
                 if (!url) { alert('请填写 URL'); return; }
                 if (!key) { alert('请填写 API Key'); return; }
@@ -2314,6 +2309,14 @@
         modalMask.addEventListener('click', (e) => {
             if (e.target === modalMask) {
                 modalMask.classList.remove('open');
+            }
+        });
+
+        console.log('语匣已启动');
+        console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
+    </script>
+</body>
+</html>ve('open');
             }
         });
 
