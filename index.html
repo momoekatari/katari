@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v3 · AI 互动</title>
+    <title>语匣 v4 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -646,66 +646,96 @@
             fill: none;
         }
 
-        /* ===== 思考块（think / thought / thinking / reasoning_content）===== */
-        /* 收起态：think-head 固定 22px 高 + block 上下 border 各 1px = 24px，紧凑如小标签 */
-        .chat-messages .msg .think-block {
-            margin: 0 0 4px;
-            border-radius: 8px;
-            background: rgba(160, 190, 205, 0.16);
-            border: 1px solid rgba(160, 190, 205, 0.4);
-            overflow: hidden;
-            font-size: 12.5px;
-            color: var(--ink-soft);
+        /* ===== 消息行布局：头像 + 气泡（微信式）===== */
+        .chat-messages .msg-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 12px;
+            animation: msgIn 0.25s ease;
         }
-        .chat-messages .msg.user .think-block {
-            background: rgba(255, 255, 255, 0.16);
-            border-color: rgba(255, 255, 255, 0.3);
-            color: rgba(255, 255, 255, 0.85);
+        .chat-messages .msg-row.user {
+            flex-direction: row-reverse;
         }
-        .chat-messages .msg .think-head {
+        .chat-messages .msg-row.system {
+            justify-content: center;
+        }
+        .chat-messages .msg-row .msg-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: var(--bg);
+            border: 1px solid var(--line);
             display: flex;
             align-items: center;
-            gap: 5px;
-            height: 22px;
-            padding: 0 9px;
-            cursor: pointer;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--ink-soft);
+            overflow: hidden;
             user-select: none;
-            font-size: 11.5px;
-            letter-spacing: 0.2px;
-            -webkit-tap-highlight-color: transparent;
         }
-        .chat-messages .msg .think-head .think-ico { font-size: 12px; }
-        .chat-messages .msg .think-head .think-arrow {
-            margin-left: auto;
-            transition: transform 0.25s ease;
-            font-size: 9px;
-            opacity: 0.6;
+        .chat-messages .msg-row .msg-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
         }
-        .chat-messages .msg .think-block.open .think-arrow { transform: rotate(90deg); }
-        /* think-body：收起直接 display:none，展开 block（max-height 方案在移动端受 pre-wrap/padding 影响失效，改用 display 切换最稳）*/
-        /* !important 兜底：防止任何来源的空 think-body 撑出空白高度 */
-        .chat-messages .msg .think-body {
-            display: none !important;
-            padding: 0 9px;
-            line-height: 1.55;
+        .chat-messages .msg-row.user .msg-avatar {
+            background: var(--accent-deep);
+            color: #fff;
+            border-color: var(--accent-deep);
+        }
+        .chat-messages .msg-row .msg-avatar.has-think {
+            cursor: pointer;
+        }
+        .chat-messages .msg-row .msg-avatar.has-think::after {
+            content: '💭';
+            position: absolute;
+            font-size: 11px;
+            transform: translate(14px, 12px);
+            pointer-events: none;
+        }
+        .chat-messages .msg-row .msg-avatar {
+            position: relative;
+        }
+        .chat-messages .msg-row .msg-bubble-wrap {
+            min-width: 0;
+            max-width: 78%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages .msg-row.user .msg-bubble-wrap {
+            align-items: flex-end;
+        }
+        /* ===== 思考浮层（thinkOverlay，全局）===== */
+        #thinkOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #thinkOverlay.show {
+            display: flex;
+        }
+        #thinkContent {
+            background: var(--paper);
+            color: var(--ink);
+            padding: 20px;
+            border-radius: var(--radius-sm);
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
             white-space: pre-wrap;
-            word-break: break-word;
+            line-height: 1.6;
+            font-size: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
-        .chat-messages .msg .think-block.open .think-body {
-            display: block !important;
-            padding: 6px 9px 7px;
-            border-top: 1px solid rgba(160, 190, 205, 0.3);
-        }
-        .chat-messages .msg.user .think-block.open .think-body {
-            border-top-color: rgba(255, 255, 255, 0.22);
-        }
-        .chat-messages .msg .think-body.streaming-cursor::after {
-            content: '▋';
-            animation: thinkCursor 0.8s infinite;
-            opacity: 0.5;
-        }
-        @keyframes thinkCursor { 0%,49%{opacity:0.5} 50%,100%{opacity:0} }
-
         .chat-input-bar {
             display: flex;
             align-items: center;
@@ -1774,13 +1804,20 @@
             const msgs = data.chats[charId] || [];
             if (!msgs.length) {
                 chatMessages.innerHTML = `
-                    <div class="msg system">💬 开始对话吧</div>
+                    <div class="msg-row system"><div class="msg system">💬 开始对话吧</div></div>
                 `;
                 return;
             }
-            chatMessages.innerHTML = msgs.map(m => {
+            const ch = data.characters.find(c => c.id === charId);
+            // 助手头像 HTML（URL 优先，否则首字符）
+            const avatarHtml = (c) => c && c.avatar
+                ? `<img src="${escHtml(c.avatar)}" alt="" />`
+                : escHtml((c && c.name ? c.name.charAt(0) : 'AI'));
+            const hasThink = (m) => !!(m.think && String(m.think).trim());
+
+            chatMessages.innerHTML = msgs.map((m, idx) => {
                 if (m.role === 'system') {
-                    return `<div class="msg system">${escHtml(m.content)}</div>`;
+                    return `<div class="msg-row system"><div class="msg system">${escHtml(m.content)}</div></div>`;
                 }
                 const isUser = m.role === 'user';
                 const cls = isUser ? 'user' : 'assistant';
@@ -1796,21 +1833,45 @@
                 if (m.isEmoji && m.emojiName) {
                     content = `😊 ${m.emojiName}`;
                 }
+                // 头像：助手用角色头像，用户用固定头像；助手有 think 时加 has-think
+                const avInner = isUser ? '我' : avatarHtml(ch);
+                const showThink = !isUser && hasThink(m);
+                const thinkCls = showThink ? ' has-think' : '';
+                const avatarDiv = `<div class="msg-avatar${thinkCls}" data-msg-idx="${idx}">${avInner}</div>`;
+
                 if (m.streaming) {
-                    return `<div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div>`;
+                    return `<div class="msg-row ${cls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
                 }
-                // 思考块（若有）：折叠面板，默认收起；trim 判空，纯空白不渲染
-                let thinkHtml = '';
-                if (m.think && String(m.think).trim()) {
-                    const t = escHtml(m.think);
-                    thinkHtml = `<div class="think-block${m.thinkOpen ? ' open' : ''}" onclick="this.classList.toggle('open')">
-                        <div class="think-head"><span class="think-ico">💭</span><span>思考过程</span><span class="think-arrow">▶</span></div>
-                        <div class="think-body">${t}</div>
-                    </div>`;
-                }
-                return `<div class="msg ${cls}">${thinkHtml}${content}</div>`;
+                return `<div class="msg-row ${cls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${content}</div></div></div>`;
             }).join('');
+
+            // 绑定助手头像双击 → 弹出思考浮层（按 data-msg-idx 回查消息 think）
+            chatMessages.querySelectorAll('.msg-avatar.has-think').forEach(el => {
+                el.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                    const idx = parseInt(el.getAttribute('data-msg-idx'), 10);
+                    const m = msgs[idx];
+                    // 防御：流式消息可能还没存 think，或索引越界
+                    if (!m || !m.think) return;
+                    const text = String(m.think).trim();
+                    if (text) showThinkOverlay(m.think);
+                });
+            });
+
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 思考浮层：显示 / 关闭
+        function showThinkOverlay(text) {
+            const overlay = document.getElementById('thinkOverlay');
+            const cont = document.getElementById('thinkContent');
+            if (!overlay || !cont) return;
+            cont.textContent = text;
+            overlay.classList.add('show');
+        }
+        function hideThinkOverlay() {
+            const overlay = document.getElementById('thinkOverlay');
+            if (overlay) overlay.classList.remove('show');
         }
 
         // 发送消息
@@ -1888,17 +1949,27 @@
             function updateStreamEl() {
                 if (!streamEl) return;
                 let html = '';
-                if (thinkBuf) {
-                    html += `<div class="think-block open"><div class="think-head"><span class="think-ico">💭</span><span>思考中…</span><span class="think-arrow">▶</span></div><div class="think-body streaming-cursor">${escHtml(thinkBuf)}</div></div>`;
-                }
-                if (streamed) {
-                    html += `<span>${escHtml(streamed)}</span>`;
-                } else if (!thinkBuf) {
-                    html = `<span class="typing-dots"><i></i><i></i><i></i></span>`;
+                if (thinkBuf && !streamed) {
+                    // 思考进行中、正文还没出：气泡内显示提示
+                    html = `<span style="font-size:11.5px;opacity:0.6">💭 思考中…</span>`;
+                } else if (streamed) {
+                    html = `<span>${escHtml(streamed)}</span>`;
                 } else {
-                    html += `<span style="font-size:11px;opacity:0.55">正在组织回复…</span>`;
+                    html = `<span class="typing-dots"><i></i><i></i><i></i></span>`;
                 }
                 streamEl.innerHTML = html;
+                // 思考有内容时，给同行助手头像加 has-think 角标（流式结束后可双击查看）
+                if (streamEl) {
+                    const row = streamEl.closest('.msg-row');
+                    const av = row && row.querySelector('.msg-avatar');
+                    if (av) {
+                        if (thinkBuf && String(thinkBuf).trim()) {
+                            av.classList.add('has-think');
+                        } else {
+                            av.classList.remove('has-think');
+                        }
+                    }
+                }
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
@@ -2480,8 +2551,22 @@
             }
         });
 
+        // 思考浮层：点击空白（遮罩本身）关闭
+        const thinkOverlay = document.getElementById('thinkOverlay');
+        if (thinkOverlay) {
+            thinkOverlay.addEventListener('click', (e) => {
+                if (e.target === thinkOverlay) {
+                    hideThinkOverlay();
+                }
+            });
+        }
+
         console.log('语匣已启动');
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
+    <!-- 思考过程浮层（全局，双击助手头像弹出；display 由 .show 类控制）-->
+    <div id="thinkOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; align-items:center; justify-content:center; padding:20px;">
+        <div id="thinkContent" style="background:var(--paper); color:var(--ink); padding:20px; border-radius:var(--radius-sm); max-width:500px; max-height:80vh; overflow-y:auto; white-space:pre-wrap; line-height:1.6; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,0.3);"></div>
+    </div>
 </body>
 </html>
