@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v11 · AI 互动</title>
+    <title>语匣 v12 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -568,6 +568,7 @@
         }
         .chat-messages .msg {
             max-width: 78%;
+            width: fit-content;
             padding: 11px 15px;
             border-radius: 20px;
             font-size: 14px;
@@ -727,6 +728,7 @@
             max-width: 78%;
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
         }
         .chat-messages .msg-row.user .msg-bubble-wrap {
             align-items: flex-end;
