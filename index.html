@@ -647,9 +647,10 @@
         }
 
         /* ===== 思考块（think / thought / thinking / reasoning_content）===== */
+        /* 收起态：think-head 固定 22px 高 + block 上下 border 各 1px = 24px，紧凑如小标签 */
         .chat-messages .msg .think-block {
-            margin: 0 0 6px;
-            border-radius: 10px;
+            margin: 0 0 4px;
+            border-radius: 8px;
             background: rgba(160, 190, 205, 0.16);
             border: 1px solid rgba(160, 190, 205, 0.4);
             overflow: hidden;
@@ -665,7 +666,8 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            padding: 5px 9px;
+            height: 22px;
+            padding: 0 9px;
             cursor: pointer;
             user-select: none;
             font-size: 11.5px;
@@ -675,22 +677,33 @@
         .chat-messages .msg .think-head .think-ico { font-size: 12px; }
         .chat-messages .msg .think-head .think-arrow {
             margin-left: auto;
-            transition: transform 0.2s ease;
+            transition: transform 0.25s ease;
             font-size: 9px;
             opacity: 0.6;
         }
         .chat-messages .msg .think-block.open .think-arrow { transform: rotate(90deg); }
+        /* think-body：max-height 过渡，收起 0 / 展开 800px，平滑动画（display 无法过渡，故改用 max-height）*/
         .chat-messages .msg .think-body {
-            padding: 0 9px 7px;
+            max-height: 0;
+            overflow: hidden;
+            padding: 0 9px;
             line-height: 1.55;
             white-space: pre-wrap;
             word-break: break-word;
-            display: none;
-            border-top: 1px solid rgba(160, 190, 205, 0.3);
-            padding-top: 6px;
+            border-top: 1px solid transparent;
+            transition: max-height 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding-top 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                        border-top-color 0.32s ease;
         }
-        .chat-messages .msg.user .think-body { border-top-color: rgba(255, 255, 255, 0.22); }
-        .chat-messages .msg .think-block.open .think-body { display: block; }
+        .chat-messages .msg .think-block.open .think-body {
+            max-height: 800px;
+            padding: 6px 9px 7px;
+            border-top-color: rgba(160, 190, 205, 0.3);
+        }
+        .chat-messages .msg.user .think-block.open .think-body {
+            border-top-color: rgba(255, 255, 255, 0.22);
+        }
         .chat-messages .msg .think-body.streaming-cursor::after {
             content: '▋';
             animation: thinkCursor 0.8s infinite;
