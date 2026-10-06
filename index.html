@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v20 · AI 互动</title>
+    <title>语匣 v22 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -104,7 +104,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding: 20px 24px 30px;
+            padding: 20px 20px 30px;
             overflow-y: auto;
             background: transparent;
         }
@@ -125,7 +125,7 @@
 
         .app-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 28px 16px;
             justify-items: center;
             margin-top: 8px;
@@ -149,8 +149,8 @@
         }
 
         .app-icon .icon-circle {
-            width: 72px;
-            height: 72px;
+            width: 64px;
+            height: 64px;
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(14px) saturate(150%);
@@ -1164,6 +1164,38 @@
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
         }
+        .longpress-menu {
+            position: fixed;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            padding: 4px 0; min-width: 120px;
+            display: none; z-index: 999; font-size: 14px;
+        }
+        .longpress-menu.open { display: block; }
+        .longpress-menu .item {
+            padding: 10px 16px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; color: var(--ink);
+        }
+        .longpress-menu .item:hover { background: var(--bg); }
+        .longpress-menu .item.delete { color: #c97b6f; }
+        .msg-row .msg { -webkit-touch-callout: none; }
+        .chat-messages .msg.emoji-msg {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            padding: 0 !important;
+        }
+        .chat-messages .msg.emoji-msg img {
+            width: 96px;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+            box-shadow: 0 6px 16px -8px rgba(36, 72, 100, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -1210,6 +1242,13 @@
                         </div>
                         <span class="label">世界书</span>
                     </div>
+                    <!-- 表情包 -->
+                    <div class="app-icon" data-page="emoji">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/><path d="M9 9h.01M15 9h.01" stroke-linecap="round"/></svg>
+                        </div>
+                        <span class="label">表情包</span>
+                    </div>
                 </div>
             </div>
 
@@ -1247,6 +1286,7 @@
                             <button class="btn btn-sm btn-soft" id="wallpaperPickBtn">📷</button>
                             <input type="file" id="wallpaperFile" accept="*/*" style="display:none;" />
                             <button class="btn btn-sm btn-soft" id="wallpaperApply">应用</button>
+                            <button class="btn btn-sm btn-soft" id="wallpaperClear">清除</button>
                         </div>
                         <div id="wallpaperPreview" class="wallpaper-preview"></div>
                     </div>
@@ -1313,10 +1353,6 @@
                                 <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round"/><path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/><path d="M12 19v4" stroke-linecap="round"/><path d="M8 23h8" stroke-linecap="round"/></svg>
                                 发语音
                             </div>
-                            <div class="item" id="emojiAction">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/><path d="M9 9h.01M15 9h.01" stroke-linecap="round"/></svg>
-                                表情包
-                            </div>
                         </div>
                         <div class="input-wrap">
                             <input id="chatInput" placeholder="输入消息…" autocomplete="off" />
@@ -1349,6 +1385,27 @@
                 </div>
             </div>
 
+            <!-- ===== 表情包页面 ===== -->
+            <div class="app-page" id="page-emoji">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title">表情包</span>
+                    <div class="right-action" id="addEmojiBtn">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body" id="emojiBody">
+                    <div id="emojiLibList"></div>
+                    <div class="empty-state" id="emojiEmpty">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/></svg>
+                        <p>还没有表情包<br />点击右上角 + 添加外链</p>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /screen -->
     </div><!-- /phone -->
 
@@ -1368,6 +1425,9 @@
         </div>
     </div>
 
+    <!-- 长按消息菜单 -->
+    <div id="longpressMenu" class="longpress-menu"></div>
+
     <script>
         // ============================================================
         //  数据层
@@ -1382,6 +1442,7 @@
                 worldBooks: [],
                 wbGroups: ['默认'],
                 emojis: [],
+                emojiGroups: ['默认'],
                 wallpaper: '',
                 theme: 'ice',
                 userAvatar: '',
@@ -1474,7 +1535,6 @@
         let editingWbId = null;
         let editingWbGroup = null;
         let isResponding = false;
-        let emojiImportFiles = [];
 
         // ============================================================
         //  DOM 引用
@@ -1487,6 +1547,7 @@
             settings: $('#page-settings'),
             wechat: $('#page-wechat'),
             worldbook: $('#page-worldbook'),
+            emoji: $('#page-emoji'),
         };
         const settingsBody = $('#settingsBody');
         const apiListEl = $('#apiList');
@@ -1502,7 +1563,6 @@
         const actionBtn = $('#actionBtn');
         const actionPopup = $('#actionPopup');
         const voiceAction = $('#voiceAction');
-        const emojiAction = $('#emojiAction');
         const wbListEl = $('#wbList');
         const wbEmpty = $('#wbEmpty');
         const modalMask = $('#modalMask');
@@ -1530,6 +1590,7 @@
                 if (name === 'settings') renderSettings();
                 if (name === 'wechat') renderChars();
                 if (name === 'worldbook') renderWorldBooks();
+                if (name === 'emoji') renderEmojiLib();
                 // 如果是从微信返回，关闭聊天视图
                 if (name !== 'wechat') {
                     chatView.style.display = 'none';
@@ -1545,6 +1606,7 @@
                 if (page === 'settings') showPage('settings');
                 else if (page === 'wechat') showPage('wechat');
                 else if (page === 'worldbook') showPage('worldbook');
+                else if (page === 'emoji') showPage('emoji');
             });
         });
 
@@ -1674,22 +1736,20 @@
             wpPickBtn.addEventListener('click', () => {
                 wpFileInput.click();
             });
-            wpFileInput.addEventListener('change', (e) => {
+            wpFileInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); wpFileInput.value = ''; return; }
-                const reader = new FileReader();
-                reader.onload = (ev) => {
+                try {
+                    const compressed = await compressImage(file, 1080, 1920, 0.85);
                     const input = document.getElementById('wallpaperInput');
-                    if (input) input.value = ev.target.result;
-                    // 选完直接应用，省得再点「应用」
-                    data.wallpaper = ev.target.result;
-                    saveData();
+                    if (input) input.value = compressed;
+                    data.wallpaper = compressed;
+                    try { saveData(); } catch (err) { alert('图片过大，存储失败！'); return; }
                     applyWallpaper();
                     const pv = document.getElementById('wallpaperPreview');
-                    if (pv) pv.style.backgroundImage = `url("${ev.target.result}")`;
-                };
-                reader.readAsDataURL(file);
+                    if (pv) pv.style.backgroundImage = `url("${compressed}")`;
+                } catch (err) { alert('图片处理失败：' + err.message); }
                 wpFileInput.value = '';
             });
         }
@@ -1709,18 +1769,22 @@
         const uaFileInput = document.getElementById('userAvatarFile');
         if (uaPickBtn && uaFileInput) {
             uaPickBtn.addEventListener('click', () => uaFileInput.click());
-            uaFileInput.addEventListener('change', (e) => {
+            uaFileInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); uaFileInput.value = ''; return; }
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    data.userAvatar = ev.target.result;
-                    saveData();
+                try {
+                    const compressedBase64 = await compressImage(file, 200, 200, 0.8);
+                    data.userAvatar = compressedBase64;
+                    try { saveData(); } catch (err) {
+                        alert('图片太大，存储空间不足，请换一张小一点的图片。');
+                        return;
+                    }
                     renderSettings();
                     if (currentCharId) renderMessages(currentCharId);
-                };
-                reader.readAsDataURL(file);
+                } catch (err) {
+                    alert('图片处理失败：' + err.message);
+                }
                 uaFileInput.value = '';
             });
         }
@@ -1827,6 +1891,8 @@
                 <div class="form-group">
                     <label>URL</label>
                     <input id="apiUrl" value="${escHtml(api?.url || '')}" placeholder="https://api.openai.com/v1" />
+                    <div class="text-muted" style="font-size:12px;margin-top:6px;">实际请求：<span id="apiUrlPreview" style="color:var(--accent);font-weight:500;">—</span></div>
+                    <div class="text-muted" style="font-size:11px;margin-top:2px;">末尾加 # 可禁用自动补全</div>
                 </div>
                 <div class="form-group">
                     <label>API Key</label>
@@ -1834,9 +1900,10 @@
                 </div>
                 <div class="form-group">
                     <label>模型</label>
+                    <input id="apiModelManual" value="${escHtml(api?.model || '')}" placeholder="手动输入模型名（如 deepseek-chat）" style="margin-bottom:8px;" />
                     <button class="btn btn-sm btn-soft" id="fetchModelsBtn" style="width:100%;">拉取模型</button>
                     <div id="modelList" class="model-list mt-8"></div>
-                    <div class="text-muted" style="font-size:12px;margin-top:6px;">${api?.model ? '当前：' + escHtml(api.model) + '（可重新拉取后更换）' : '拉取后点选一个模型'}</div>
+                    <div class="text-muted" style="font-size:12px;margin-top:6px;">点击 chip 或手动输入均可，保存时以手输为准</div>
                 </div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">取消</button>
@@ -1845,6 +1912,17 @@
             `;
 
             modalMask.classList.add('open');
+
+            // URL 实时预览
+            const urlInput = document.getElementById('apiUrl');
+            const urlPreview = document.getElementById('apiUrlPreview');
+            function updateUrlPreview() {
+                const v = (urlInput.value || '').trim();
+                if (!v) { urlPreview.textContent = '—'; return; }
+                urlPreview.textContent = resolveChatUrl(v) || '—';
+            }
+            urlInput.addEventListener('input', updateUrlPreview);
+            updateUrlPreview();
 
             // 拉取模型
             const fetchBtn = document.getElementById('fetchModelsBtn');
@@ -1858,10 +1936,16 @@
                 fetchBtn.textContent = '拉取中…';
                 fetchBtn.disabled = true;
                 try {
-                    const resp = await fetch(url + '/models', {
-                        headers: { 'Authorization': 'Bearer ' + key }
-                    });
-                    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                    const candidates = buildModelsCandidates(url);
+                    let resp = null, lastErr = null;
+                    for (const u of candidates) {
+                        try {
+                            const r = await fetch(u, { headers: { 'Authorization': 'Bearer ' + key } });
+                            if (r.ok) { resp = r; break; }
+                            lastErr = new Error('HTTP ' + r.status + ' @ ' + u);
+                        } catch (err) { lastErr = err; }
+                    }
+                    if (!resp) throw (lastErr || new Error('拉取失败'));
                     const json = await resp.json();
                     const models = json.data || json.models || [];
                     if (!models.length) throw new Error('未找到模型列表');
@@ -1873,7 +1957,8 @@
                         el.addEventListener('click', () => {
                             modelListDiv.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
                             el.classList.add('active');
-                            
+                            const mi = document.getElementById('apiModelManual');
+                            if (mi) mi.value = el.dataset.model;
                         });
                     });
                     // 如果之前有选中的模型，高亮
@@ -1898,8 +1983,9 @@
                 const name = document.getElementById('apiName').value.trim() || '未命名';
                 const url = document.getElementById('apiUrl').value.trim();
                 const key = document.getElementById('apiKey').value.trim();
+                const manualModel = (document.getElementById('apiModelManual').value || '').trim();
                 const activeChip = document.querySelector('.model-chip.active');
-                const model = activeChip ? activeChip.dataset.model : (api?.model || '');
+                const model = manualModel || (activeChip ? activeChip.dataset.model : (api?.model || ''));
 
                 if (!url) { alert('请填写 URL'); return; }
                 if (!key) { alert('请填写 API Key'); return; }
@@ -2015,6 +2101,13 @@
                     </select>
                     <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选</div>
                 </div>
+                <div class="form-group">
+                    <label>绑定表情包</label>
+                    <select id="charEmoji" multiple style="height:auto;min-height:60px;">
+                        ${data.emojis.map(e => `<option value="${e.id}" ${ch?.emojis?.includes(e.id) ? 'selected' : ''}>${escHtml(e.name)}${e.isGlobal ? '（全局）' : ''}</option>`).join('') || '<option value="">— 暂无表情 —</option>'}
+                    </select>
+                    <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选。全局表情自动对所有角色生效，无需勾选</div>
+                </div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">取消</button>
                     <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '创建'}</button>
@@ -2030,16 +2123,15 @@
                 avatarPickBtn.addEventListener('click', () => {
                     avatarFileInput.click();
                 });
-                avatarFileInput.addEventListener('change', (e) => {
+                avatarFileInput.addEventListener('change', async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
                     if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); avatarFileInput.value = ''; return; }
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
+                    try {
+                        const compressed = await compressImage(file, 200, 200, 0.8);
                         const input = document.getElementById('charAvatar');
-                        if (input) input.value = ev.target.result;
-                    };
-                    reader.readAsDataURL(file);
+                        if (input) input.value = compressed;
+                    } catch (err) { alert('图片处理失败：' + err.message); }
                     avatarFileInput.value = '';
                 });
             }
@@ -2055,6 +2147,8 @@
                 const avatar = document.getElementById('charAvatar').value.trim();
                 const wbSelect = document.getElementById('charWb');
                 const wbIds = Array.from(wbSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+                const emojiSelect = document.getElementById('charEmoji');
+                const emojiIds = emojiSelect ? Array.from(emojiSelect.selectedOptions).map(o => o.value).filter(v => v) : [];
 
                 if (isEdit) {
                     const idx = data.characters.findIndex(c => c.id === charId);
@@ -2066,6 +2160,7 @@
                             setting,
                             avatar,
                             worldBooks: wbIds,
+                            emojis: emojiIds,
                             updatedAt: Date.now(),
                         };
                     }
@@ -2077,6 +2172,7 @@
                         setting,
                         avatar,
                         worldBooks: wbIds,
+                        emojis: emojiIds,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -2167,28 +2263,44 @@
 
                 // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
                 }
 
                 // 语音 / 表情包：不拆分，整条渲染
                 if (m.isVoice) {
                     const vcontent = `<div class="voice-label"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round"/><path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/></svg>🎤 ${escHtml(m.content)}</div>`;
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${vcontent}</div></div></div>`;
-                }
-                if (m.isEmoji && m.emojiName) {
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">😊 ${escHtml(m.emojiName)}</div></div></div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${vcontent}</div></div></div>`;
                 }
 
-                // 普通消息：按换行拆成多段，每段一个独立 .msg-row（各自带头像）
+                // 普通消息：按换行拆成多段，每段先解析 [表情:名字] 再生成气泡
+                const charEmojiIds2 = ch ? (ch.emojis || []) : [];
+                const availableEmojis2 = [
+                    ...new Map([
+                        ...data.emojis.filter(e => e.isGlobal),
+                        ...data.emojis.filter(e => charEmojiIds2.includes(e.id))
+                    ].map(e => [e.id, e])).values()
+                ];
                 const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
                 if (!paras.length) {
                     // 防御：空内容也要有个占位气泡
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
                 }
-                // 每段生成独立行；最后一个气泡下方挂提示小字（若有 think）
-                const rows = paras.map((p, i) => {
-                    const last = (i === paras.length - 1) ? thinkHint : '';
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(p)}</div>${last}</div></div>`;
+                // 每段先 parseEmojiSegments 拆成片段，再各自生成气泡；最后一片段挂 thinkHint
+                const allSegs = [];
+                paras.forEach(p => {
+                    const segs = parseEmojiSegments(p, availableEmojis2);
+                    segs.forEach(s => allSegs.push(s));
+                });
+                if (!allSegs.length) {
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
+                }
+                const rows = allSegs.map((seg, i) => {
+                    const last = (i === allSegs.length - 1) ? thinkHint : '';
+                    if (seg.type === 'emoji') {
+                        const em = seg.emoji;
+                        return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} emoji-msg"><img src="${escHtml(em.url)}" alt="${escHtml(em.name)}" /></div>${last}</div></div>`;
+                    }
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(seg.text)}</div>${last}</div></div>`;
                 }).join('');
                 return rows;
             }).join('');
@@ -2208,6 +2320,50 @@
                     const text = String(m.think).trim();
                     if (text) showThinkOverlay(m.think);
                 });
+            });
+
+            // 长按消息 → 弹出编辑/删除菜单
+            let __lpTimer;
+            chatMessages.querySelectorAll('.msg-row .msg').forEach(el => {
+                const showMenu = (e) => {
+                    e.preventDefault();
+                    const row = el.closest('.msg-row');
+                    const idx = parseInt(row.dataset.msgIdx, 10);
+                    const m = msgs[idx];
+                    if (!m || m.role === 'system') return;
+                    const menu = document.getElementById('longpressMenu');
+                    menu.innerHTML = `
+                        <div class="item" id="lpEdit">✏️ 编辑</div>
+                        <div class="item delete" id="lpDelete">🗑️ 删除</div>
+                    `;
+                    const rect = el.getBoundingClientRect();
+                    menu.style.left = Math.min(rect.left, window.innerWidth - 140) + 'px';
+                    menu.style.top = Math.max(rect.top - 60, 10) + 'px';
+                    menu.classList.add('open');
+                    document.getElementById('lpDelete').onclick = () => {
+                        msgs.splice(idx, 1);
+                        saveData();
+                        renderMessages(currentCharId);
+                        menu.classList.remove('open');
+                    };
+                    document.getElementById('lpEdit').onclick = () => {
+                        const newText = prompt('编辑消息内容：', m.content);
+                        if (newText !== null && newText.trim() !== '') {
+                            m.content = newText.trim();
+                            saveData();
+                            renderMessages(currentCharId);
+                        }
+                        menu.classList.remove('open');
+                    };
+                    document.addEventListener('click', function closeMenu() {
+                        menu.classList.remove('open');
+                        document.removeEventListener('click', closeMenu);
+                    }, { once: true });
+                };
+                el.addEventListener('touchstart', (e) => { __lpTimer = setTimeout(() => showMenu(e), 600); }, { passive: true });
+                el.addEventListener('touchend', () => clearTimeout(__lpTimer));
+                el.addEventListener('touchmove', () => clearTimeout(__lpTimer), { passive: true });
+                el.addEventListener('contextmenu', (e) => { e.preventDefault(); showMenu(e); });
             });
 
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -2336,6 +2492,15 @@
                         systemPrompt += `- ${w.name}: ${w.content}\n`;
                     });
                 }
+                // 可用表情清单
+                const charEmojiIds = ch.emojis || [];
+                const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
+                const globalEmojis = data.emojis.filter(e => e.isGlobal);
+                const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
+                if (availableEmojis.length) {
+                    systemPrompt += '\n【可用表情】\n如果想发表情，格式是 [表情:名字]。\n名字必须严格从下面清单里一字不差地选，选不出合适的就不发，用文字表达即可：\n';
+                    systemPrompt += availableEmojis.map(e => e.name).join(' / ') + '\n';
+                }
 
                 // 获取历史消息
                 const history = data.chats[currentCharId] || [];
@@ -2361,28 +2526,29 @@
                 thinkTag = null;
                 pendingTag = '';
 
-                // 调用 API（流式 SSE）
-
-                // 调用 API（流式 SSE）
-                const resp = await fetch(api.url + '/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + api.key,
-                    },
-                    body: JSON.stringify({
-                        model: api.model || 'gpt-3.5-turbo',
-                        messages: messages,
-                        max_tokens: 800,
-                        temperature: 0.7,
-                        stream: true,
-                    }),
+                // 调用 API（流式 SSE，候选地址兜底）
+                const chatCandidates = buildChatCandidates(api.url);
+                const reqBody = JSON.stringify({
+                    model: api.model || 'gpt-3.5-turbo',
+                    messages: messages,
+                    max_tokens: 800,
+                    temperature: 0.7,
+                    stream: true,
                 });
-
-                if (!resp.ok) {
-                    const errText = await resp.text();
-                    throw new Error('API 错误: ' + resp.status + ' ' + errText);
+                const reqHeaders = {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + api.key,
+                };
+                let resp = null, lastErr = null;
+                for (const u of chatCandidates) {
+                    try {
+                        const r = await fetch(u, { method: 'POST', headers: reqHeaders, body: reqBody });
+                        if (r.ok) { resp = r; break; }
+                        const errText = await r.text();
+                        lastErr = new Error('API 错误: ' + r.status + ' @ ' + u + ' ' + errText);
+                    } catch (err) { lastErr = err; }
                 }
+                if (!resp) throw (lastErr || new Error('请求失败'));
 
                 const ctype = (resp.headers.get('content-type') || '').toLowerCase();
                 if (ctype.includes('event-stream')) {
@@ -2537,98 +2703,157 @@
             setTimeout(() => sendMessage(), 400);
         });
 
-        // 表情包
-        emojiAction.addEventListener('click', () => {
-            actionPopup.classList.remove('open');
-            openEmojiModal();
-        });
-
-        function openEmojiModal() {
-            modalBox.innerHTML = `
-                <div class="modal-title">😊 表情包</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                    <button class="btn btn-sm btn-soft" id="importEmojiBtn">📁 导入图片</button>
-                    <button class="btn btn-sm btn-soft" id="importEmojiBatch">📂 批量导入</button>
-                </div>
-                <input type="file" id="emojiFileInput" accept="*/*" multiple style="display:none;" />
-                <div id="emojiGrid" class="emoji-grid"></div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">关闭</button>
-                </div>
-            `;
-            modalMask.classList.add('open');
-
-            renderEmojiGrid();
-
-            document.getElementById('modalCancel').addEventListener('click', () => {
-                modalMask.classList.remove('open');
+        // ============================================================
+        //  表情包
+        // ============================================================
+        function renderEmojiLib() {
+            const list = data.emojis || [];
+            const bodyEl = document.getElementById('emojiLibList');
+            const emptyEl = document.getElementById('emojiEmpty');
+            if (!bodyEl || !emptyEl) return;
+            if (!list.length) { bodyEl.innerHTML = ''; emptyEl.style.display = 'block'; return; }
+            emptyEl.style.display = 'none';
+            const groups = data.emojiGroups || ['默认'];
+            let html = '';
+            groups.forEach(g => {
+                const items = list.filter(e => (e.group || '默认') === g);
+                if (!items.length) return;
+                html += `<div class="wb-group">
+                    <div class="group-title">
+                        <span>${escHtml(g)}</span>
+                        <span style="font-weight:400;font-size:12px;">${items.length} 条</span>
+                    </div>
+                    ${items.map(e => `
+                        <div class="wb-item">
+                            <div style="width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);background:var(--bg);">
+                                <img src="${escHtml(e.url)}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />
+                            </div>
+                            <div class="info">
+                                <div class="name">${escHtml(e.name)}</div>
+                                <div class="desc">${e.isGlobal ? '🌍 全局' : '📌 局部'} · ${escHtml(e.url.slice(0, 30))}${e.url.length > 30 ? '…' : ''}</div>
+                            </div>
+                            <div class="toggle-wrap">
+                                <div class="toggle-track ${e.isGlobal ? 'on' : ''}" data-emoji-id="${e.id}" data-action="toggleEmojiGlobal">
+                                    <div class="thumb"></div>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-soft" data-emoji-id="${e.id}" data-action="editEmoji">编辑</button>
+                            <button class="btn btn-sm btn-danger" data-emoji-id="${e.id}" data-action="deleteEmoji">删除</button>
+                        </div>
+                    `).join('')}
+                </div>`;
             });
-
-            // 单个导入
-            document.getElementById('importEmojiBtn').addEventListener('click', () => {
-                document.getElementById('emojiFileInput').click();
-            });
-            // 批量导入
-            document.getElementById('importEmojiBatch').addEventListener('click', () => {
-                document.getElementById('emojiFileInput').click();
-            });
-
-            const fileInput = document.getElementById('emojiFileInput');
-            fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
-                if (!files.length) {
-                    if (e.target.files.length) alert('请选择图片文件！');
-                    fileInput.value = '';
-                    return;
-                }
-                files.forEach(f => {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        const name = f.name.replace(/\.[^.]+$/, '');
-                        data.emojis.push({
-                            id: generateId(),
-                            name: name,
-                            dataUrl: ev.target.result,
-                            createdAt: Date.now(),
-                        });
-                        saveData();
-                        renderEmojiGrid();
-                    };
-                    reader.readAsDataURL(f);
+            bodyEl.innerHTML = html;
+            bodyEl.querySelectorAll('[data-action="toggleEmojiGlobal"]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const e = data.emojis.find(x => x.id === el.dataset.emojiId);
+                    if (e) { e.isGlobal = !e.isGlobal; saveData(); renderEmojiLib(); }
                 });
-                fileInput.value = '';
             });
-        }
-
-        function renderEmojiGrid() {
-            const grid = document.getElementById('emojiGrid');
-            if (!grid) return;
-            const emojis = data.emojis;
-            if (!emojis.length) {
-                grid.innerHTML = `<div class="text-muted" style="grid-column:1/-1;text-align:center;padding:20px;">还没有表情包，导入一些吧</div>`;
-                return;
-            }
-            grid.innerHTML = emojis.map(e => `
-                <div class="emoji-item" data-emoji-id="${e.id}">
-                    <img src="${e.dataUrl}" alt="${escHtml(e.name)}" />
-                    <span class="label">${escHtml(e.name)}</span>
-                </div>
-            `).join('');
-
-            grid.querySelectorAll('.emoji-item').forEach(el => {
+            bodyEl.querySelectorAll('[data-action="editEmoji"]').forEach(el => {
+                el.addEventListener('click', () => openEmojiEditModal(el.dataset.emojiId));
+            });
+            bodyEl.querySelectorAll('[data-action="deleteEmoji"]').forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.emojiId;
-                    const emoji = data.emojis.find(e => e.id === id);
-                    if (emoji && currentCharId) {
-                        addMessage(currentCharId, 'user', `[表情] ${emoji.name}`, { isEmoji: true,
-                            emojiName: emoji.name });
-                        modalMask.classList.remove('open');
-                        // 自动响应
-                        setTimeout(() => sendMessage(), 500);
+                    if (confirm('确定删除此表情吗？')) {
+                        data.emojis = data.emojis.filter(x => x.id !== id);
+                        // 同时解除所有角色的绑定
+                        data.characters.forEach(c => {
+                            if (c.emojis) c.emojis = c.emojis.filter(eid => eid !== id);
+                        });
+                        saveData();
+                        renderEmojiLib();
                     }
                 });
             });
         }
+
+        function openEmojiEditModal(emojiId) {
+            const em = emojiId ? data.emojis.find(e => e.id === emojiId) : null;
+            const isEdit = !!em;
+            const groups = data.emojiGroups || ['默认'];
+            const groupOpts = groups.map(g => `<option value="${escHtml(g)}" ${em?.group === g ? 'selected' : ''}>${escHtml(g)}</option>`).join('');
+            modalBox.innerHTML = `
+                <div class="modal-title">${isEdit ? '编辑表情' : '添加表情'}</div>
+                <div class="form-group">
+                    <label>名字（AI 引用时使用）</label>
+                    <input id="emojiName" value="${escHtml(em?.name || '')}" placeholder="如：亲亲、委屈、哈哈" />
+                    <div class="text-muted" style="font-size:12px;margin-top:4px;">只支持中英文、数字、下划线，最长 20 字符</div>
+                </div>
+                <div class="form-group">
+                    <label>图片外链 URL</label>
+                    <input id="emojiUrl" value="${escHtml(em?.url || '')}" placeholder="https://..." />
+                </div>
+                <div class="form-group">
+                    <label>分组</label>
+                    <select id="emojiGroup">
+                        ${groupOpts}
+                        <option value="__new__">+ 新建分组</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:12px;">
+                    <label style="margin-bottom:0;">全局生效</label>
+                    <div class="toggle-track ${em?.isGlobal ? 'on' : ''}" id="emojiGlobalToggle" style="width:38px;height:22px;border-radius:30px;background:var(--line);position:relative;cursor:pointer;flex-shrink:0;">
+                        <div class="thumb" style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:${em?.isGlobal ? '18px' : '2px'};transition:transform 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.1);"></div>
+                    </div>
+                    <span class="text-muted" style="font-size:12px;">全局表情所有角色都能用</span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-soft" id="modalCancel">取消</button>
+                    <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
+                </div>
+            `;
+            modalMask.classList.add('open');
+
+            const toggleEl = document.getElementById('emojiGlobalToggle');
+            let isGlobal = em?.isGlobal || false;
+            toggleEl.addEventListener('click', () => {
+                isGlobal = !isGlobal;
+                toggleEl.classList.toggle('on', isGlobal);
+                toggleEl.querySelector('.thumb').style.left = isGlobal ? '18px' : '2px';
+            });
+
+            const groupSelect = document.getElementById('emojiGroup');
+            groupSelect.addEventListener('change', () => {
+                if (groupSelect.value === '__new__') {
+                    const g = prompt('输入新分组名称：');
+                    if (g && g.trim()) {
+                        const gg = g.trim();
+                        if (!data.emojiGroups.includes(gg)) { data.emojiGroups.push(gg); saveData(); }
+                        groupSelect.innerHTML = data.emojiGroups.map(x => `<option value="${escHtml(x)}" ${x === gg ? 'selected' : ''}>${escHtml(x)}</option>`).join('') + '<option value="__new__">+ 新建分组</option>';
+                        groupSelect.value = gg;
+                    } else {
+                        groupSelect.value = data.emojiGroups[0] || '默认';
+                    }
+                }
+            });
+
+            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
+            document.getElementById('modalSave').addEventListener('click', () => {
+                const name = document.getElementById('emojiName').value.trim();
+                const url = document.getElementById('emojiUrl').value.trim();
+                const group = document.getElementById('emojiGroup').value;
+                if (!name) { alert('请填写名字'); return; }
+                if (!/^[\w\u4e00-\u9fa5]{1,20}$/.test(name)) { alert('名字只支持中英文、数字、下划线，最长 20 字符'); return; }
+                if (!url) { alert('请填写 URL'); return; }
+                if (!/^https?:\/\//.test(url)) { alert('URL 必须以 http:// 或 https:// 开头'); return; }
+                const finalGroup = group === '__new__' ? '默认' : group;
+                if (isEdit) {
+                    const idx = data.emojis.findIndex(x => x.id === emojiId);
+                    if (idx > -1) {
+                        data.emojis[idx] = { ...data.emojis[idx], name, url, group: finalGroup, isGlobal };
+                    }
+                } else {
+                    data.emojis.push({ id: generateId(), name, url, group: finalGroup, isGlobal, createdAt: Date.now() });
+                }
+                saveData();
+                modalMask.classList.remove('open');
+                renderEmojiLib();
+            });
+        }
+
+        $('#addEmojiBtn').addEventListener('click', () => openEmojiEditModal(null));
 
         // ============================================================
         //  世界书
@@ -2823,6 +3048,67 @@
         // ============================================================
         //  工具函数
         // ============================================================
+        function normalizeBaseUrl(rawUrl) {
+            let u = (rawUrl || '').trim();
+            if (!u) return { base: '', force: false };
+            let force = false;
+            if (u.endsWith('#')) { force = true; u = u.slice(0, -1); }
+            u = u.replace(/\/+$/, '');
+            u = u.replace(/\/chat\/completions$/i, '');
+            u = u.replace(/\/models$/i, '');
+            u = u.replace(/\/+$/, '');
+            return { base: u, force };
+        }
+        function resolveChatUrl(rawUrl) {
+            const { base, force } = normalizeBaseUrl(rawUrl);
+            if (!base) return '';
+            return force ? base : base + '/chat/completions';
+        }
+        function buildChatCandidates(rawUrl) {
+            const { base, force } = normalizeBaseUrl(rawUrl);
+            if (!base) return [];
+            if (force) return [base];
+            const c1 = base + '/chat/completions';
+            const c2 = /\/v1$/i.test(base) ? null : (base + '/v1/chat/completions');
+            return (c2 && c2 !== c1) ? [c1, c2] : [c1];
+        }
+        function buildModelsCandidates(rawUrl) {
+            const { base, force } = normalizeBaseUrl(rawUrl);
+            if (!base) return [];
+            if (force) return [base];
+            const c1 = base + '/models';
+            const c2 = /\/v1$/i.test(base) ? null : (base + '/v1/models');
+            return (c2 && c2 !== c1) ? [c1, c2] : [c1];
+        }
+
+        function compressImage(file, maxWidth, maxHeight, quality) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+                        } else {
+                            if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = (err) => reject(err);
+                };
+                reader.onerror = (err) => reject(err);
+            });
+        }
+
         function applyTheme(key) {
             const t = THEMES[key] || THEMES.ice;
             const s = document.documentElement.style;
@@ -2835,6 +3121,25 @@
             s.setProperty('--accent-deep', t.accentDeep);
             s.setProperty('--bubble-user', t.bubbleUser);
             s.setProperty('--bubble-assistant', t.bubbleAssistant);
+        }
+
+        // 将文本按 [表情:名字] 标记拆成片段：命中的转成 emoji 片段，没命中的当纯文字
+        function parseEmojiSegments(text, emojiList) {
+            const parts = [];
+            const regex = /\[表情[:：]\s*([^\]]+?)\s*\]/g;
+            let last = 0, m;
+            while ((m = regex.exec(text)) !== null) {
+                const before = text.slice(last, m.index);
+                if (before) parts.push({ type: 'text', text: before });
+                const name = m[1].trim();
+                const em = emojiList.find(e => e.name === name);
+                if (em) parts.push({ type: 'emoji', emoji: em });
+                else parts.push({ type: 'text', text: m[0] });
+                last = regex.lastIndex;
+            }
+            const rest = text.slice(last);
+            if (rest) parts.push({ type: 'text', text: rest });
+            return parts;
         }
 
         function escHtml(str) {
@@ -2939,5 +3244,4 @@
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
 </body>
-<!-- v20 -->
 </html>
