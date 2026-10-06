@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v12 · AI 互动</title>
+    <title>语匣 v15 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -567,7 +567,7 @@
             background: rgba(230, 240, 245, 0.4);
         }
         .chat-messages .msg {
-            max-width: 78%;
+            max-width: 85%;
             width: fit-content;
             padding: 11px 15px;
             border-radius: 20px;
@@ -593,10 +593,11 @@
         }
         .chat-messages .msg.user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #6ba8c2 0%, #4d8aa8 100%);
+            background: rgba(91, 155, 181, 0.55);
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            backdrop-filter: blur(14px) saturate(150%);
             border: 1px solid rgba(70, 130, 160, 0.4);
             color: #fff;
-            border-bottom-right-radius: 6px;
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.35),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.06),
@@ -605,9 +606,10 @@
         }
         .chat-messages .msg.assistant {
             align-self: flex-start;
-            background: linear-gradient(160deg, #fbfdfe 0%, #eef5f9 100%);
+            background: rgba(246, 251, 253, 0.6);
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            backdrop-filter: blur(14px) saturate(150%);
             border: 1px solid rgba(160, 190, 205, 0.5);
-            border-bottom-left-radius: 6px;
             color: var(--ink);
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -661,10 +663,17 @@
         /* ===== 消息行布局：头像 + 气泡（微信式）===== */
         .chat-messages .msg-row {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 9px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
             animation: msgIn 0.34s cubic-bezier(0.21, 1, 0.32, 1);
+        }
+        .chat-messages .msg-row.compact-prev {
+            margin-bottom: 16px;
+        }
+        .chat-messages .msg-row.same-sender {
+            margin-top: -10px;
+            animation: msgIn 0.24s cubic-bezier(0.21, 1, 0.32, 1);
         }
         .chat-messages .msg-row:last-child {
             margin-bottom: 6px;
@@ -724,8 +733,9 @@
             pointer-events: none;
         }
         .chat-messages .msg-row .msg-bubble-wrap {
-            min-width: 0;
-            max-width: 78%;
+            min-width: 60px;
+            max-width: 85%;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -1979,29 +1989,47 @@
                 }
                 const isUser = m.role === 'user';
                 const cls = isUser ? 'user' : 'assistant';
-                let content = escHtml(m.content);
-                // 如果是语音消息
-                if (m.isVoice) {
-                    content = `<div class="voice-label">
-                        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round"/><path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/></svg>
-                        🎤 ${content}
-                    </div>`;
-                }
-                // 如果是表情包
-                if (m.isEmoji && m.emojiName) {
-                    content = `😊 ${m.emojiName}`;
-                }
+                // 同一人连续消息：上一条非 system 且 role 相同 → 间距紧凑
+                const prev = msgs[idx - 1];
+                const sameSender = prev && prev.role !== 'system' && prev.role === m.role;
+                const rowCls = sameSender ? `${cls} same-sender` : cls;
+
                 // 头像：助手用角色头像，用户用固定头像；助手有 think 时加 has-think
                 const avInner = isUser ? '我' : avatarHtml(ch);
                 const showThink = !isUser && hasThink(m);
                 const thinkCls = showThink ? ' has-think' : '';
+                // 每个段落都要有自己的头像，data-msg-idx 都指向同一条消息
                 const avatarDiv = `<div class="msg-avatar${thinkCls}" data-msg-idx="${idx}">${avInner}</div>`;
 
+                // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
-                    return `<div class="msg-row ${cls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
                 }
-                return `<div class="msg-row ${cls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${content}</div></div></div>`;
+
+                // 语音 / 表情包：不拆分，整条渲染
+                if (m.isVoice) {
+                    const vcontent = `<div class="voice-label"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round"/><path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/></svg>🎤 ${escHtml(m.content)}</div>`;
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${vcontent}</div></div></div>`;
+                }
+                if (m.isEmoji && m.emojiName) {
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">😊 ${escHtml(m.emojiName)}</div></div></div>`;
+                }
+
+                // 普通消息：按换行拆成多段，每段一个独立 .msg-row（各自带头像）
+                const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
+                if (!paras.length) {
+                    // 防御：空内容也要有个占位气泡
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div></div></div>`;
+                }
+                // 每段生成独立行，第 2 段起用紧凑间距（same-sender 已含 margin-top:-10px）
+                const rows = paras.map(p =>
+                    `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(p)}</div></div></div>`
+                ).join('');
+                return rows;
             }).join('');
+
+            // 气泡间距：同一人连续气泡之间紧凑(4px)，不同人之间宽松(16px)
+            // 已通过 .same-sender 的 margin-top:-10px 实现，这里不再额外处理
 
             // 绑定助手头像双击 → 弹出思考浮层（按 data-msg-idx 回查消息 think）
             // 手机端原生 dblclick 不生效，改用 200ms 内两次 click 模拟双击
@@ -2685,8 +2713,11 @@
             data.chats[charId] = [
                 { role: 'assistant', content: '你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
                 { role: 'user', content: '今天有点累呢…', timestamp: Date.now() - 3000000 },
-                { role: 'assistant', content: '辛苦了～ 记得照顾好自己，累了就歇一歇。我在这里陪你呢。',
-                  think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
+                { role: 'assistant', content: '辛苦了～\n记得照顾好自己\n累了就歇一歇\n我在这里陪你呢。', think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
+                { role: 'user', content: '其实也不算太累\n就是加班有点烦\n老板今天又加需求了', timestamp: Date.now() - 1800000 },
+                { role: 'assistant', content: '啊，加班确实容易心烦呢～\n老板加需求这种事，真的会让人无奈。\n不过你已经撑到现在了，很厉害了哦！\n要不要休息一下，喝杯水？', think: '用户倾诉加班和老板加需求，这是情绪累积。先共情认可情绪（确实烦），再肯定用户的努力（撑到现在很厉害），最后给一个轻松的小建议（喝水休息）。分四段说，节奏不压迫。', timestamp: Date.now() - 1200000 },
+                { role: 'user', content: '嗯…你说得对\n谢谢小治愈！', timestamp: Date.now() - 600000 },
+                { role: 'assistant', content: '不客气～\n随时来找我聊天\n我一直都在的 🌿', timestamp: Date.now() - 300000 },
             ];
             // 示例世界书
             data.worldBooks.push({
