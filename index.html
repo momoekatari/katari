@@ -3130,7 +3130,7 @@
             let last = 0, m;
             while ((m = regex.exec(text)) !== null) {
                 const before = text.slice(last, m.index);
-                if (before) parts.push({ type: 'text', text: before });
+                if (before && before.trim() !== '') parts.push({ type: 'text', text: before });
                 const name = m[1].trim();
                 const em = emojiList.find(e => e.name === name);
                 if (em) parts.push({ type: 'emoji', emoji: em });
@@ -3138,7 +3138,7 @@
                 last = regex.lastIndex;
             }
             const rest = text.slice(last);
-            if (rest) parts.push({ type: 'text', text: rest });
+            if (rest && rest.trim() !== '') parts.push({ type: 'text', text: rest });
             return parts;
         }
 
