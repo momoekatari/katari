@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v19 · AI 互动</title>
+    <title>语匣 v20 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -594,10 +594,11 @@
         }
         .chat-messages .msg.user {
             align-self: flex-end;
-            background: rgba(91, 155, 181, 0.55);
-            -webkit-backdrop-filter: blur(14px) saturate(150%);
-            backdrop-filter: blur(14px) saturate(150%);
-            border: 1px solid rgba(70, 130, 160, 0.4);
+            background: var(--bubble-user);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid var(--accent);
+            border-color: color-mix(in srgb, var(--accent) 55%, transparent);
             color: #fff;
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.35),
@@ -607,10 +608,10 @@
         }
         .chat-messages .msg.assistant {
             align-self: flex-start;
-            background: rgba(246, 251, 253, 0.6);
-            -webkit-backdrop-filter: blur(14px) saturate(150%);
-            backdrop-filter: blur(14px) saturate(150%);
-            border: 1px solid rgba(160, 190, 205, 0.5);
+            background: var(--bubble-assistant);
+            -webkit-backdrop-filter: blur(18px) saturate(160%);
+            backdrop-filter: blur(18px) saturate(160%);
+            border: 1px solid var(--line);
             color: var(--ink);
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -1124,6 +1125,45 @@
             color: var(--ink-soft);
             font-size: 13px;
         }
+        .theme-grid {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .theme-swatch {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.15);
+        }
+        .theme-swatch:hover {
+            transform: translateY(-2px);
+        }
+        .theme-swatch.active {
+            border-color: var(--ink);
+            box-shadow: 0 0 0 2px var(--paper) inset, 0 4px 12px -4px rgba(0, 0, 0, 0.25);
+        }
+
+        /* 滚动时禁用毛玻璃，用实色背景顶替 */
+        .scrolling .chat-messages .msg.user {
+            background: var(--accent);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        .scrolling .chat-messages .msg.assistant {
+            background: var(--paper);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        .scrolling .app-icon .icon-circle {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
     </style>
 </head>
 <body>
@@ -1186,6 +1226,20 @@
                     </div>
                 </div>
                 <div class="app-body" id="settingsBody">
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">主题色</div>
+                        <div id="themeGrid" class="theme-grid"></div>
+                    </div>
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">个人头像</div>
+                        <div style="display:flex;gap:8px;">
+                            <input id="userAvatarInput" placeholder="图片 URL（留空=显示「我」）" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);background:rgba(255,255,255,0.5);" />
+                            <button class="btn btn-sm btn-soft" id="userAvatarPickBtn">📷</button>
+                            <input type="file" id="userAvatarFile" accept="*/*" style="display:none;" />
+                            <button class="btn btn-sm btn-soft" id="userAvatarApply">应用</button>
+                        </div>
+                        <div id="userAvatarPreview" style="width:64px;height:64px;border-radius:50%;margin-top:10px;background-size:cover;background-position:center;background-color:rgba(160,190,205,0.15);border:1px solid var(--line);"></div>
+                    </div>
                     <div class="card wallpaper-card">
                         <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">壁纸</div>
                         <div style="display:flex;gap:8px;">
@@ -1329,6 +1383,8 @@
                 wbGroups: ['默认'],
                 emojis: [],
                 wallpaper: '',
+                theme: 'ice',
+                userAvatar: '',
             };
         }
 
@@ -1355,6 +1411,44 @@
         // ============================================================
         //  API 工具
         // ============================================================
+        const THEMES = {
+            ice: {
+                name: '冰蓝',
+                bg: '#e7f0f5', paper: '#f6fbfd', ink: '#243c50', inkSoft: '#5f7c90',
+                line: '#cbe0ea', accent: '#5b9bb5', accentDeep: '#3d7a99',
+                bubbleUser: 'rgba(91, 155, 181, 0.42)',
+                bubbleAssistant: 'rgba(246, 251, 253, 0.55)',
+            },
+            peach: {
+                name: '蜜桃',
+                bg: '#fdf0ea', paper: '#fff9f5', ink: '#4d3833', inkSoft: '#a08781',
+                line: '#f0d9cc', accent: '#d48b73', accentDeep: '#b56d55',
+                bubbleUser: 'rgba(212, 139, 115, 0.42)',
+                bubbleAssistant: 'rgba(255, 249, 245, 0.55)',
+            },
+            matcha: {
+                name: '抹茶',
+                bg: '#eaf0e5', paper: '#f7fbf2', ink: '#384033', inkSoft: '#7d8a75',
+                line: '#d3e0c8', accent: '#7ba065', accentDeep: '#5f8449',
+                bubbleUser: 'rgba(123, 160, 101, 0.42)',
+                bubbleAssistant: 'rgba(247, 251, 242, 0.55)',
+            },
+            violet: {
+                name: '紫罗兰',
+                bg: '#efeaf5', paper: '#faf7fd', ink: '#3f3548', inkSoft: '#8a7f96',
+                line: '#ded3ea', accent: '#9b7fc0', accentDeep: '#7c5fa3',
+                bubbleUser: 'rgba(155, 127, 192, 0.42)',
+                bubbleAssistant: 'rgba(250, 247, 253, 0.55)',
+            },
+            snow: {
+                name: '初雪灰',
+                bg: '#eff1f3', paper: '#fafbfc', ink: '#2a3138', inkSoft: '#6b7480',
+                line: '#dde2e7', accent: '#7c92a8', accentDeep: '#5b7288',
+                bubbleUser: 'rgba(124, 146, 168, 0.42)',
+                bubbleAssistant: 'rgba(250, 251, 252, 0.55)',
+            },
+        };
+
         function generateId() {
             return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         }
@@ -1481,12 +1575,38 @@
         // ============================================================
         //  设置页面
         // ============================================================
+        function renderThemeGrid() {
+            const grid = document.getElementById('themeGrid');
+            if (!grid) return;
+            grid.innerHTML = Object.entries(THEMES).map(([key, t]) => `
+                <div class="theme-swatch ${data.theme === key ? 'active' : ''}"
+                     data-theme="${key}"
+                     title="${t.name}"
+                     style="background: linear-gradient(135deg, ${t.accent} 0%, ${t.accent} 50%, ${t.paper} 50%, ${t.paper} 100%);"></div>
+            `).join('');
+            grid.querySelectorAll('.theme-swatch').forEach(el => {
+                el.addEventListener('click', () => {
+                    data.theme = el.dataset.theme;
+                    saveData();
+                    applyTheme(data.theme);
+                    renderThemeGrid();
+                });
+            });
+        }
+
         function renderSettings() {
+            // 主题色
+            renderThemeGrid();
             // 回显壁纸
             const wpInput = document.getElementById('wallpaperInput');
             if (wpInput) wpInput.value = data.wallpaper || '';
             const wpPreview = document.getElementById('wallpaperPreview');
             if (wpPreview) wpPreview.style.backgroundImage = data.wallpaper ? `url("${data.wallpaper}")` : '';
+            // 回显个人头像
+            const uaInput = document.getElementById('userAvatarInput');
+            if (uaInput) uaInput.value = data.userAvatar || '';
+            const uaPreview = document.getElementById('userAvatarPreview');
+            if (uaPreview) uaPreview.style.backgroundImage = data.userAvatar ? `url("${data.userAvatar}")` : '';
             const list = data.apis;
             if (list.length === 0) {
                 apiListEl.innerHTML = '';
@@ -1571,6 +1691,37 @@
                 };
                 reader.readAsDataURL(file);
                 wpFileInput.value = '';
+            });
+        }
+
+        // 个人头像：URL 应用 / 相册选图
+        const uaApplyBtn = document.getElementById('userAvatarApply');
+        if (uaApplyBtn) {
+            uaApplyBtn.addEventListener('click', () => {
+                const input = document.getElementById('userAvatarInput');
+                data.userAvatar = (input ? input.value : '').trim();
+                saveData();
+                renderSettings();
+                if (currentCharId) renderMessages(currentCharId);
+            });
+        }
+        const uaPickBtn = document.getElementById('userAvatarPickBtn');
+        const uaFileInput = document.getElementById('userAvatarFile');
+        if (uaPickBtn && uaFileInput) {
+            uaPickBtn.addEventListener('click', () => uaFileInput.click());
+            uaFileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); uaFileInput.value = ''; return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    data.userAvatar = ev.target.result;
+                    saveData();
+                    renderSettings();
+                    if (currentCharId) renderMessages(currentCharId);
+                };
+                reader.readAsDataURL(file);
+                uaFileInput.value = '';
             });
         }
 
@@ -2005,7 +2156,9 @@
                 const rowCls = sameSender ? `${cls} same-sender` : cls;
 
                 // 头像：助手用角色头像，用户用固定头像
-                const avInner = isUser ? '我' : avatarHtml(ch);
+                const avInner = isUser
+                    ? (data.userAvatar ? `<img src="${escHtml(data.userAvatar)}" alt="" />` : '我')
+                    : avatarHtml(ch);
                 const avatarDiv = `<div class="msg-avatar">${avInner}</div>`;
                 // 助手有 think 时，气泡下方加提示小字
                 const thinkHint = (!isUser && hasThink(m))
@@ -2670,6 +2823,20 @@
         // ============================================================
         //  工具函数
         // ============================================================
+        function applyTheme(key) {
+            const t = THEMES[key] || THEMES.ice;
+            const s = document.documentElement.style;
+            s.setProperty('--bg', t.bg);
+            s.setProperty('--paper', t.paper);
+            s.setProperty('--ink', t.ink);
+            s.setProperty('--ink-soft', t.inkSoft);
+            s.setProperty('--line', t.line);
+            s.setProperty('--accent', t.accent);
+            s.setProperty('--accent-deep', t.accentDeep);
+            s.setProperty('--bubble-user', t.bubbleUser);
+            s.setProperty('--bubble-assistant', t.bubbleAssistant);
+        }
+
         function escHtml(str) {
             if (!str) return '';
             const div = document.createElement('div');
@@ -2734,6 +2901,7 @@
         }
 
         // 启动
+        applyTheme(data.theme);
         showPage('desktop');
         renderSettings();
         renderChars();
@@ -2755,6 +2923,17 @@
                 }
             });
         }
+
+        // 滚动性能优化：滚动时加 .scrolling 类禁用毛玻璃
+        let __scrollTimer;
+        function __onScrollPerf() {
+            document.body.classList.add('scrolling');
+            clearTimeout(__scrollTimer);
+            __scrollTimer = setTimeout(() => document.body.classList.remove('scrolling'), 150);
+        }
+        document.querySelectorAll('.desktop, .app-body, .chat-messages').forEach(el => {
+            el.addEventListener('scroll', __onScrollPerf, { passive: true });
+        });
 
         console.log('语匣已启动');
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
