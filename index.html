@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v15 · AI 互动</title>
+    <title>语匣 v18 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -1198,7 +1198,7 @@
                         <div style="display:flex;gap:8px;">
                             <input id="wallpaperInput" placeholder="图片 URL（留空=默认底色）" style="flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);background:rgba(255,255,255,0.5);" />
                             <button class="btn btn-sm btn-soft" id="wallpaperPickBtn">📷</button>
-                            <input type="file" id="wallpaperFile" accept="image/*" style="display:none;" />
+                            <input type="file" id="wallpaperFile" accept="*/*" style="display:none;" />
                             <button class="btn btn-sm btn-soft" id="wallpaperApply">应用</button>
                         </div>
                         <div id="wallpaperPreview" class="wallpaper-preview"></div>
@@ -1251,7 +1251,9 @@
                             <span>返回</span>
                         </div>
                         <span class="title" id="chatCharName">对话</span>
-                        <div style="width:44px;"></div>
+                        <div id="chatEditBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
                     </div>
                     <div class="chat-messages" id="chatMessages"></div>
                     <div class="chat-input-bar" style="position:relative;">
@@ -1560,6 +1562,7 @@
             wpFileInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
+                if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); wpFileInput.value = ''; return; }
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     const input = document.getElementById('wallpaperInput');
@@ -1844,7 +1847,7 @@
                     <div style="display:flex;gap:8px;align-items:center;">
                         <input id="charAvatar" value="${escHtml(ch?.avatar || '')}" placeholder="图片 URL（留空用首字符）" style="flex:1;min-width:0;" />
                         <button type="button" class="btn btn-sm btn-soft" id="charAvatarPickBtn">📷 选图</button>
-                        <input type="file" id="charAvatarFile" accept="image/*" style="display:none;" />
+                        <input type="file" id="charAvatarFile" accept="*/*" style="display:none;" />
                     </div>
                 </div>
                 <div class="form-group">
@@ -1884,6 +1887,7 @@
                 avatarFileInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
+                    if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); avatarFileInput.value = ''; return; }
                     const reader = new FileReader();
                     reader.onload = (ev) => {
                         const input = document.getElementById('charAvatar');
@@ -1967,6 +1971,17 @@
         }
 
         $('#chatBack').addEventListener('click', closeChat);
+
+        // 聊天头部编辑按钮：打开当前角色编辑弹窗
+        const chatEditBtn = document.getElementById('chatEditBtn');
+        if (chatEditBtn) {
+            chatEditBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (!currentCharId) return;
+                openCharModal(currentCharId);
+            });
+        }
 
         function renderMessages(charId) {
             const msgs = data.chats[charId] || [];
@@ -2409,7 +2424,7 @@
                     <button class="btn btn-sm btn-soft" id="importEmojiBtn">📁 导入图片</button>
                     <button class="btn btn-sm btn-soft" id="importEmojiBatch">📂 批量导入</button>
                 </div>
-                <input type="file" id="emojiFileInput" accept="image/*" multiple style="display:none;" />
+                <input type="file" id="emojiFileInput" accept="*/*" multiple style="display:none;" />
                 <div id="emojiGrid" class="emoji-grid"></div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">关闭</button>
@@ -2434,8 +2449,12 @@
 
             const fileInput = document.getElementById('emojiFileInput');
             fileInput.addEventListener('change', (e) => {
-                const files = Array.from(e.target.files);
-                if (!files.length) return;
+                const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+                if (!files.length) {
+                    if (e.target.files.length) alert('请选择图片文件！');
+                    fileInput.value = '';
+                    return;
+                }
                 files.forEach(f => {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
