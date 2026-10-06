@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v18 · AI 互动</title>
+    <title>语匣 v19 · AI 互动</title>
     <style>
         /* ===== 全局重置 & 字体 ===== */
         * {
@@ -559,6 +559,7 @@
         /* ===== 微信 - 聊天界面 ===== */
         .chat-messages {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding: 16px 14px 12px;
             display: flex;
@@ -713,25 +714,6 @@
             color: #fff;
             border-color: rgba(61, 122, 153, 0.5);
         }
-        .chat-messages .msg-row .msg-avatar.has-think {
-            cursor: pointer;
-        }
-        .chat-messages .msg-row .msg-avatar.has-think::after {
-            content: '💭';
-            position: absolute;
-            bottom: -3px;
-            right: -4px;
-            font-size: 13px;
-            background: var(--paper);
-            border-radius: 50%;
-            width: 17px;
-            height: 17px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-            pointer-events: none;
-        }
         .chat-messages .msg-row .msg-bubble-wrap {
             min-width: 60px;
             max-width: 85%;
@@ -743,7 +725,18 @@
         .chat-messages .msg-row.user .msg-bubble-wrap {
             align-items: flex-end;
         }
-        /* 思考浮层样式全部用内联 style 写在 #thinkOverlay 标签上，不在这里定义 */
+        /* 思考抽屉：slideUp 动画 + 提示小字 */
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .chat-messages .think-hint {
+            font-size: 12px;
+            color: rgba(95, 124, 144, 0.7);
+            cursor: pointer;
+            padding: 2px 0 0;
+            -webkit-tap-highlight-color: transparent;
+        }
         .chat-input-bar {
             display: flex;
             align-items: center;
@@ -1244,7 +1237,7 @@
                     </div>
                 </div>
                 <!-- 聊天子视图 -->
-                <div id="chatView" style="display:none;flex-direction:column;height:100%;">
+                <div id="chatView" style="display:none;flex-direction:column;flex:1;min-height:0;height:auto;overflow:hidden;">
                     <div class="app-header" style="border-bottom:1px solid var(--line);">
                         <div class="back" id="chatBack">
                             <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1312,12 +1305,14 @@
         </div>
     </div>
 
-    <!-- 思考过程浮层：纯文字 + 半透明冰蓝底，铺满屏幕留小边距，无卡片 -->
-    <div id="thinkOverlay" style="display:none; position:fixed; inset:0; background:rgba(91,155,181,0.9); z-index:9999; padding:16px; box-sizing:border-box; overflow-y:auto;">
-        <div id="thinkContent" style="color:var(--ink); white-space:pre-wrap; word-break:break-word; line-height:1.7; font-size:15px; padding-top:44px;"></div>
+    <!-- 思考过程：底部抽屉（Bottom Sheet）-->
+    <div id="thinkOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:flex-end; z-index:9999;">
+        <div id="thinkContent" style="width:100%; max-height:80vh; background:var(--paper); border-radius:24px 24px 0 0; padding:20px 24px 30px; box-sizing:border-box; display:flex; flex-direction:column; box-shadow:0 -10px 40px rgba(0,0,0,0.1); animation:slideUp 0.3s ease;">
+            <div style="width:36px; height:4px; background:#cbd5e1; border-radius:4px; margin:0 auto 16px; flex-shrink:0;"></div>
+            <div style="font-size:16px; font-weight:700; color:var(--ink); flex-shrink:0;">思考过程</div>
+            <div id="thinkBody" style="flex:1; overflow-y:auto; font-size:15px; line-height:1.8; color:var(--ink); white-space:pre-wrap; word-break:break-word; margin-top:10px;"></div>
+        </div>
     </div>
-    <!-- ✕ 关闭按钮（独立 fixed，z-index 高于浮层，在 script 之前确保可被 getElementById 取到）-->
-    <div id="thinkCloseBtn" style="display:none; position:fixed; top:14px; right:16px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.8); color:var(--ink); font-size:20px; line-height:40px; text-align:center; cursor:pointer; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:10000;">✕</div>
 
     <script>
         // ============================================================
@@ -2009,12 +2004,13 @@
                 const sameSender = prev && prev.role !== 'system' && prev.role === m.role;
                 const rowCls = sameSender ? `${cls} same-sender` : cls;
 
-                // 头像：助手用角色头像，用户用固定头像；助手有 think 时加 has-think
+                // 头像：助手用角色头像，用户用固定头像
                 const avInner = isUser ? '我' : avatarHtml(ch);
-                const showThink = !isUser && hasThink(m);
-                const thinkCls = showThink ? ' has-think' : '';
-                // 每个段落都要有自己的头像，data-msg-idx 都指向同一条消息
-                const avatarDiv = `<div class="msg-avatar${thinkCls}" data-msg-idx="${idx}">${avInner}</div>`;
+                const avatarDiv = `<div class="msg-avatar">${avInner}</div>`;
+                // 助手有 think 时，气泡下方加提示小字
+                const thinkHint = (!isUser && hasThink(m))
+                    ? `<div class="think-hint" data-msg-idx="${idx}">💭 偷偷看看ta在想什么？</div>`
+                    : '';
 
                 // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
@@ -2034,59 +2030,47 @@
                 const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
                 if (!paras.length) {
                     // 防御：空内容也要有个占位气泡
-                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div></div></div>`;
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
                 }
-                // 每段生成独立行，第 2 段起用紧凑间距（same-sender 已含 margin-top:-10px）
-                const rows = paras.map(p =>
-                    `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(p)}</div></div></div>`
-                ).join('');
+                // 每段生成独立行；最后一个气泡下方挂提示小字（若有 think）
+                const rows = paras.map((p, i) => {
+                    const last = (i === paras.length - 1) ? thinkHint : '';
+                    return `<div class="msg-row ${rowCls}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(p)}</div>${last}</div></div>`;
+                }).join('');
                 return rows;
             }).join('');
 
             // 气泡间距：同一人连续气泡之间紧凑(4px)，不同人之间宽松(16px)
             // 已通过 .same-sender 的 margin-top:-10px 实现，这里不再额外处理
 
-            // 绑定助手头像双击 → 弹出思考浮层（按 data-msg-idx 回查消息 think）
-            // 手机端原生 dblclick 不生效，改用 200ms 内两次 click 模拟双击
-            chatMessages.querySelectorAll('.msg-avatar.has-think').forEach(el => {
-                let lastTap = 0;
+            // 点击「偷偷看看ta在想什么？」提示 → 弹出思考抽屉
+            chatMessages.querySelectorAll('.think-hint').forEach(el => {
                 el.addEventListener('click', (e) => {
-                    const now = Date.now();
-                    if (now - lastTap < 300) {
-                        // 双击触发
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const idx = parseInt(el.getAttribute('data-msg-idx'), 10);
-                        const m = msgs[idx];
-                        // 防御：流式消息可能还没存 think，或索引越界，绝不报错
-                        if (!m || !m.think) { lastTap = 0; return; }
-                        const text = String(m.think).trim();
-                        if (text) showThinkOverlay(m.think);
-                        lastTap = 0;
-                    } else {
-                        lastTap = now;
-                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const idx = parseInt(el.getAttribute('data-msg-idx'), 10);
+                    const m = msgs[idx];
+                    // 防御：流式消息可能还没存 think，或索引越界，绝不报错
+                    if (!m || !m.think) return;
+                    const text = String(m.think).trim();
+                    if (text) showThinkOverlay(m.think);
                 });
             });
 
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // 思考浮层：显示 / 关闭（浮层 + ✕按钮 同步显隐）
+        // 思考抽屉：显示 / 关闭
         function showThinkOverlay(text) {
             const overlay = document.getElementById('thinkOverlay');
-            const cont = document.getElementById('thinkContent');
-            const closeBtn = document.getElementById('thinkCloseBtn');
-            if (!overlay || !cont) return;
-            cont.textContent = text;
-            overlay.style.display = 'block';
-            if (closeBtn) closeBtn.style.display = 'block';
+            const body = document.getElementById('thinkBody');
+            if (!overlay || !body) return;
+            body.textContent = text;
+            overlay.style.display = 'flex';
         }
         function hideThinkOverlay() {
             const overlay = document.getElementById('thinkOverlay');
-            const closeBtn = document.getElementById('thinkCloseBtn');
             if (overlay) overlay.style.display = 'none';
-            if (closeBtn) closeBtn.style.display = 'none';
         }
 
         // 发送消息
@@ -2173,18 +2157,7 @@
                     html = `<span class="typing-dots"><i></i><i></i><i></i></span>`;
                 }
                 streamEl.innerHTML = html;
-                // 思考有内容时，给同行助手头像加 has-think 角标（流式结束后可双击查看）
-                if (streamEl) {
-                    const row = streamEl.closest('.msg-row');
-                    const av = row && row.querySelector('.msg-avatar');
-                    if (av) {
-                        if (thinkBuf && String(thinkBuf).trim()) {
-                            av.classList.add('has-think');
-                        } else {
-                            av.classList.remove('has-think');
-                        }
-                    }
-                }
+                // 流式期间思考中：气泡显示提示，不操作头像
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
@@ -2773,19 +2746,10 @@
             }
         });
 
-        // 思考浮层：✕ 按钮单独绑定 click（不依赖冒泡），点浮层空白也关
+        // 思考抽屉：点击遮罩背景关闭（点抽屉内部不关）
         const thinkOverlay = document.getElementById('thinkOverlay');
-        const thinkCloseBtn = document.getElementById('thinkCloseBtn');
-        if (thinkCloseBtn) {
-            thinkCloseBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                hideThinkOverlay();
-            });
-        }
         if (thinkOverlay) {
             thinkOverlay.addEventListener('click', (e) => {
-                // 点到浮层背景（非文字内容）也关
                 if (e.target === thinkOverlay) {
                     hideThinkOverlay();
                 }
