@@ -1545,6 +1545,20 @@
             flex-direction: column;
             gap: 2px;
             margin-bottom: 8px;
+            max-height: 168px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--line) transparent;
+        }
+        .todo-list::-webkit-scrollbar {
+            width: 3px;
+        }
+        .todo-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .todo-list::-webkit-scrollbar-thumb {
+            background: var(--line);
+            border-radius: 10px;
         }
         .todo-empty {
             font-size: 12px;
@@ -2832,6 +2846,37 @@
                     }
                 });
             });
+
+            (function renderVisionCard(){
+                const slot = document.getElementById('visionCardSlot');
+                if (!slot) return;
+                slot.innerHTML = `
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">视觉桥接</div>
+                        <div class="text-muted" style="font-size:12px;margin-bottom:10px;">给纯文本模型加识图能力：发图时先用 GLM-4V-Flash 识别，再把描述合并进消息</div>
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:12px;">智谱 API Key</label>
+                            <input id="visionApiKey" value="${escHtml(data.visionApiKey || '')}" placeholder="在 open.bigmodel.cn 申请" style="padding:6px 10px;font-size:13px;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:12px;">识图模型</label>
+                            <input id="visionModel" value="${escHtml(data.visionModel || 'glm-4v-flash')}" style="padding:6px 10px;font-size:13px;" />
+                        </div>
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:12px;">识图提示词</label>
+                            <textarea id="visionPrompt" rows="2" style="padding:6px 10px;font-size:13px;">${escHtml(data.visionPrompt || '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。')}</textarea>
+                        </div>
+                        <button class="btn btn-sm btn-soft" id="visionSaveBtn" style="width:100%;">保存</button>
+                    </div>
+                `;
+                document.getElementById('visionSaveBtn').addEventListener('click', () => {
+                    data.visionApiKey = document.getElementById('visionApiKey').value.trim();
+                    data.visionModel = document.getElementById('visionModel').value.trim() || 'glm-4v-flash';
+                    data.visionPrompt = document.getElementById('visionPrompt').value.trim() || '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。';
+                    saveData();
+                    alert('视觉桥接配置已保存');
+                });
+            })();
         }
 
         // 添加 API
