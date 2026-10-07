@@ -2422,10 +2422,6 @@
                 addMessage(currentCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
                 return;
             }
-            if (!api) {
-                addMessage(currentCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
-                return;
-            }
 
             isResponding = true;
             respondBtn.style.opacity = '0.5';
@@ -2558,6 +2554,7 @@
                     max_tokens: 800,
                     temperature: 0.7,
                     stream: true,
+                    stream_options: { include_usage: true }
                 });
                 const reqHeaders = {
                     'Content-Type': 'application/json',
