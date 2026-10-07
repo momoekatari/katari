@@ -1929,6 +1929,7 @@
                         </div>
                         <div id="tokenTotalDisplay" style="font-size:26px;font-weight:600;color:var(--accent);margin-top:10px;letter-spacing:-0.3px;">0</div>
                     </div>
+                    <div id="visionCardSlot"></div>
                     <div id="apiList"></div>
                     <div class="empty-state" id="apiEmpty">
                         <svg viewBox="0 0 24 24"><path d="M12 2v4M12 22v-4M4 12H2M6 12H4M20 12h-2M22 12h-2M19.07 4.93l-2.83 2.83M4.93 19.07l2.83-2.83M19.07 19.07l-2.83-2.83M4.93 4.93l2.83 2.83" stroke-linecap="round"/></svg>
@@ -2101,6 +2102,10 @@
                 albumPhoto: '',
                 albumWall: ['', '', ''],
                 todos: [],
+                visionApiKey: '',
+                visionApiUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+                visionModel: 'glm-4v-flash',
+                visionPrompt: '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。',
                 vinylLabel: '',
                 bubbleBlur: true,
                 totalTokens: 0,
@@ -4729,26 +4734,5 @@
         console.log('语匣已启动');
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
-<script>
-setTimeout(function(){
-    function info(sel){
-        var el = document.querySelector(sel);
-        if (!el) return sel + ': 不存在';
-        var cs = getComputedStyle(el);
-        return sel + ' clientW=' + el.clientWidth + ' offsetW=' + el.offsetWidth
-            + ' pad=' + cs.padding + ' border=' + cs.borderLeftWidth + '/' + cs.borderRightWidth
-            + ' margin=' + cs.marginLeft + '/' + cs.marginRight;
-    }
-    var lines = [
-        info('.phone'),
-        info('.screen'),
-        info('.desktop'),
-        info('.desktop-pager'),
-        info('.desktop-page'),
-        info('.app-grid')
-    ];
-    alert(lines.join('\n'));
-}, 800);
-</script>
 </body>
 </html>
