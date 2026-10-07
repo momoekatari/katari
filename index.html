@@ -1437,6 +1437,7 @@
         function getDefaultData() {
             return {
                 apis: [],
+                currentApiId: '',
                 characters: [],
                 chats: {},
                 worldBooks: [],
@@ -1676,20 +1677,33 @@
                 return;
             }
             apiEmpty.style.display = 'none';
-            apiListEl.innerHTML = list.map((api, idx) => `
-                <div class="card api-item">
+            apiListEl.innerHTML = list.map((api, idx) => {
+                const isCurrent = (data.currentApiId === api.id) || (!data.currentApiId && idx === 0);
+                return `
+                <div class="card api-item ${isCurrent ? 'api-item-active' : ''}" data-api-id="${api.id}" data-action="selectApi" style="cursor:pointer; ${isCurrent ? 'border-color: var(--accent); box-shadow: 0 4px 12px -4px rgba(36, 72, 100, 0.15);' : ''}">
                     <div class="info">
-                        <div class="name">${escHtml(api.name || '未命名')}</div>
+                        <div class="name" style="display:flex;align-items:center;gap:6px;">
+                            ${escHtml(api.name || '未命名')}
+                            ${isCurrent ? `<span class="tag tag-accent" style="font-size:10px;padding:1px 8px;">当前</span>` : ''}
+                        </div>
                         <div class="detail">${escHtml(api.url || '')} · ${escHtml(api.model || '未选')}</div>
                     </div>
                     <div class="actions">
-                        <button class="btn btn-sm btn-soft" data-api-id="${api.id}" data-action="editApi">编辑</button>
-                        <button class="btn btn-sm btn-danger" data-api-id="${api.id}" data-action="deleteApi">删除</button>
+                        <button class="btn btn-sm btn-soft" data-api-id="${api.id}" data-action="editApi" onclick="event.stopPropagation();">编辑</button>
+                        <button class="btn btn-sm btn-danger" data-api-id="${api.id}" data-action="deleteApi" onclick="event.stopPropagation();">删除</button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             // 事件绑定
+            apiListEl.querySelectorAll('[data-action="selectApi"]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = el.dataset.apiId;
+                    data.currentApiId = id;
+                    saveData();
+                    renderSettings();
+                });
+            });
             apiListEl.querySelectorAll('[data-action="editApi"]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.apiId;
@@ -2260,6 +2274,11 @@
                 const thinkHint = (!isUser && hasThink(m))
                     ? `<div class="think-hint" data-msg-idx="${idx}">💭 偷偷看看ta在想什么？</div>`
                     : '';
+                // token 数：助手消息气泡下方极小灰字
+                const tokenHint = (!isUser && m.tokens)
+                    ? `<div style="font-size:10px; color:var(--ink-soft); margin-top:4px; opacity:0.6;">🪙 ${m.tokens} tokens</div>`
+                    : '';
+                const extraHints = thinkHint + tokenHint;
 
                 // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
@@ -2283,19 +2302,19 @@
                 const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
                 if (!paras.length) {
                     // 防御：空内容也要有个占位气泡
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
                 }
-                // 每段先 parseEmojiSegments 拆成片段，再各自生成气泡；最后一片段挂 thinkHint
+                // 每段先 parseEmojiSegments 拆成片段，再各自生成气泡；最后一片段挂 extraHints
                 const allSegs = [];
                 paras.forEach(p => {
                     const segs = parseEmojiSegments(p, availableEmojis2);
                     segs.forEach(s => allSegs.push(s));
                 });
                 if (!allSegs.length) {
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${thinkHint}</div></div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
                 }
                 const rows = allSegs.map((seg, i) => {
-                    const last = (i === allSegs.length - 1) ? thinkHint : '';
+                    const last = (i === allSegs.length - 1) ? extraHints : '';
                     if (seg.type === 'emoji') {
                         const em = seg.emoji;
                         return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} emoji-msg"><img src="${escHtml(em.url)}" alt="${escHtml(em.name)}" /></div>${last}</div></div>`;
@@ -2396,8 +2415,13 @@
             addMessage(currentCharId, 'user', text);
             chatInput.value = '';
 
-            // 获取 API
-            const api = data.apis[0]; // 使用第一个 API
+            // 获取 API：优先取 currentApiId，无则兜底第一个
+            let api = data.apis.find(a => a.id === data.currentApiId);
+            if (!api) api = data.apis[0];
+            if (!api) {
+                addMessage(currentCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
+                return;
+            }
             if (!api) {
                 addMessage(currentCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
                 return;
@@ -2557,6 +2581,7 @@
                     const decoder = new TextDecoder('utf-8');
                     const NL = String.fromCharCode(10);
                     let buffer = '';
+                    let usageInfo = null;
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
@@ -2570,6 +2595,7 @@
                             if (payload === '[DONE]') { buffer = ''; break; }
                             try {
                                 const json = JSON.parse(payload);
+                                if (json.usage) usageInfo = json.usage;
                                 const delta = json.choices?.[0]?.delta;
                                 if (!delta) continue;
                                 // ① 原生思考字段（DeepSeek R1 等）
@@ -2597,6 +2623,7 @@
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
+                    if (json.usage) streamMsg.tokens = (json.usage.prompt_tokens || 0) + (json.usage.completion_tokens || 0);
                     const msg0 = json.choices?.[0]?.message;
                     thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
                     streamed = (msg0?.content || '').replace(/<\/?(think|thought|thinking)\b[^>]*>/gi, '');
@@ -2618,6 +2645,7 @@
                 // 收尾落库：思考段存进消息（不回送给 API，省 token）
                 streamMsg.content = streamed || '（没有收到回复）';
                 if (thinkBuf) streamMsg.think = thinkBuf.trim();
+                if (usageInfo) streamMsg.tokens = (usageInfo.prompt_tokens || 0) + (usageInfo.completion_tokens || 0);
                 delete streamMsg.streaming;
                 saveData();
                 renderMessages(currentCharId);
