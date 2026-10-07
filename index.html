@@ -1344,6 +1344,7 @@
                         <div id="chatEditBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
+                        <div id="debugTokenBtn" style="cursor:pointer; padding:4px; font-size:12px; color:var(--ink-soft);">🐞</div>
                     </div>
                     <div class="chat-messages" id="chatMessages"></div>
                     <div class="chat-input-bar" style="position:relative;">
@@ -2427,6 +2428,15 @@
             });
         }
 
+        const debugTokenBtn = document.getElementById('debugTokenBtn');
+        if (debugTokenBtn) {
+            debugTokenBtn.addEventListener('click', () => {
+                const msgs = getCurrentSessionMsgs();
+                const last = msgs[msgs.length - 1];
+                alert('最后一条消息的完整数据：\n' + JSON.stringify(last));
+            });
+        }
+
         function renderMessages(charId) {
             const msgs = getCurrentSessionMsgs();
             if (!msgs.length) {
@@ -2463,7 +2473,7 @@
                     ? `<div class="think-hint" data-msg-idx="${idx}">💭 偷偷看看ta在想什么？</div>`
                     : '';
                 // token 数：助手消息气泡下方极小灰字
-                const tokenHint = (!isUser && m.tokens)
+                const tokenHint = (!isUser && m.tokens !== undefined && m.tokens !== null)
                     ? `<div style="font-size:10px; color:var(--ink-soft); margin-top:4px; opacity:0.6;">🪙 ${m.tokens} tokens</div>`
                     : '';
                 const extraHints = thinkHint + tokenHint;
@@ -2830,7 +2840,11 @@
                 // 收尾落库：思考段存进消息（不回送给 API，省 token）
                 streamMsg.content = streamed || '（没有收到回复）';
                 if (thinkBuf) streamMsg.think = thinkBuf.trim();
-                if (usageInfo) streamMsg.tokens = (usageInfo.prompt_tokens || 0) + (usageInfo.completion_tokens || 0);
+                if (usageInfo) {
+                    streamMsg.tokens = (usageInfo.prompt_tokens || 0) + (usageInfo.completion_tokens || 0);
+                } else {
+                    streamMsg.tokens = 'NO_USAGE';
+                }
                 delete streamMsg.streaming;
                 saveData();
                 renderMessages(currentCharId);
