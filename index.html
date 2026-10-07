@@ -1410,6 +1410,7 @@
     </div><!-- /phone -->
 
     <!-- ===== 模态框容器 ===== -->
+    <div id="__debugPanel" style="display:none; position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,0.85); color:#0f0; font-family:monospace; font-size:11px; padding:10px; z-index:99999; max-height:50vh; overflow-y:auto; white-space:pre-wrap; word-break:break-all;"></div>
     <div class="modal-mask" id="modalMask">
         <div class="modal-box" id="modalBox">
             <!-- 动态内容 -->
@@ -1433,6 +1434,12 @@
         //  数据层
         // ============================================================
         const DB_KEY = 'healPhoneData';
+        function __dbg(msg) {
+            const p = document.getElementById('__debugPanel');
+            if (!p) return;
+            p.style.display = 'block';
+            p.textContent += msg + '\n';
+        }
 
         function getDefaultData() {
             return {
@@ -2592,7 +2599,11 @@
                             if (payload === '[DONE]') { buffer = ''; break; }
                             try {
                                 const json = JSON.parse(payload);
-                                console.log('SSE chunk:', json);
+                                if (json.usage) {
+                                    __dbg('[USAGE] ' + JSON.stringify(json.usage));
+                                } else if (json.choices && json.choices.length === 0) {
+                                    __dbg('[EMPTY-CHOICES] ' + JSON.stringify(json).slice(0, 200));
+                                }
                                 if (json.usage) usageInfo = json.usage;
                                 const delta = json.choices?.[0]?.delta;
                                 if (!delta) continue;
@@ -2621,7 +2632,7 @@
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
-                    console.log('Non-stream response:', json);
+                    __dbg('[NON-STREAM] hasUsage=' + !!json.usage + ' keys=' + Object.keys(json).join(','));
                     if (json.usage) streamMsg.tokens = (json.usage.prompt_tokens || 0) + (json.usage.completion_tokens || 0);
                     const msg0 = json.choices?.[0]?.message;
                     thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
