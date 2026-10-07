@@ -2592,6 +2592,7 @@
                             if (payload === '[DONE]') { buffer = ''; break; }
                             try {
                                 const json = JSON.parse(payload);
+                                console.log('SSE chunk:', json);
                                 if (json.usage) usageInfo = json.usage;
                                 const delta = json.choices?.[0]?.delta;
                                 if (!delta) continue;
@@ -2620,6 +2621,7 @@
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
+                    console.log('Non-stream response:', json);
                     if (json.usage) streamMsg.tokens = (json.usage.prompt_tokens || 0) + (json.usage.completion_tokens || 0);
                     const msg0 = json.choices?.[0]?.message;
                     thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
