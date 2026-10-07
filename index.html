@@ -131,7 +131,7 @@
             scroll-snap-align: start;
             display: flex;
             flex-direction: column;
-            padding: 20px 20px 10px;
+            padding: 20px 14px 10px;
             box-sizing: border-box;
             overflow-y: auto;
             overflow-x: hidden;
@@ -172,10 +172,10 @@
         .app-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 14px 14px;
+            gap: 12px 12px;
             justify-items: center;
             margin-top: auto;
-            padding: 16px 14px;
+            padding: 14px 14px;
             border-radius: 24px;
             background: rgba(255, 255, 255, 0.14);
             backdrop-filter: blur(8px) saturate(180%) brightness(1.05);
@@ -1460,6 +1460,285 @@
             user-select: none;
         }
         .album-hint.hidden { display: none; }
+        .photo-wall {
+            position: relative;
+            width: 100%;
+            height: 290px;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow: visible;
+        }
+        .photo-item {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 4px;
+            padding: 6px;
+            box-sizing: border-box;
+            box-shadow:
+                0 2px 6px rgba(36, 60, 80, 0.12),
+                0 8px 20px -8px rgba(36, 60, 80, 0.25);
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        .photo-item:active { opacity: 0.85; }
+        .photo-item.empty {
+            background: rgba(255, 255, 255, 0.35);
+            border: 1.5px dashed rgba(95, 124, 144, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .photo-item.empty::after {
+            content: '+';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ink-soft);
+            opacity: 0.5;
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        /* 3 个槽位：位置、大小、旋转各不相同 */
+        .photo-item[data-idx="0"] {
+            top: 10px; left: 8px;
+            width: 140px; height: 160px;
+            transform: rotate(-5deg);
+            z-index: 3;
+        }
+        .photo-item[data-idx="1"] {
+            top: 20px; right: 8px;
+            width: 130px; height: 145px;
+            transform: rotate(6deg);
+            z-index: 2;
+        }
+        .photo-item[data-idx="2"] {
+            top: 100px; left: 50%;
+            width: 160px; height: 120px;
+            transform: translateX(-50%) rotate(-3deg);
+            z-index: 4;
+        }
+        .todo-card {
+            margin-top: 0;
+            padding: 12px 14px 10px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.32);
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 30px -16px rgba(36, 72, 100, 0.22);
+        }
+        .todo-head {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--ink);
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+        }
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+        .todo-empty {
+            font-size: 12px;
+            color: var(--ink-soft);
+            opacity: 0.6;
+            padding: 8px 0;
+            text-align: center;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 4px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: opacity 0.2s;
+            border-radius: 8px;
+        }
+        .todo-item:active { background: rgba(0,0,0,0.04); }
+        .todo-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1.5px solid var(--accent);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, border-color 0.2s;
+            background: transparent;
+        }
+        .todo-dot::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            transition: background 0.2s;
+        }
+        .todo-item.done .todo-dot {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .todo-item.done .todo-dot::after {
+            background: #fff;
+        }
+        .todo-text {
+            font-size: 12.5px;
+            color: var(--ink);
+            line-height: 1.4;
+            word-break: break-word;
+            transition: color 0.2s, opacity 0.2s;
+        }
+        .todo-item.done .todo-text {
+            text-decoration: line-through;
+            text-decoration-thickness: 1px;
+            color: var(--ink-soft);
+            opacity: 0.6;
+        }
+        .todo-input-row {
+            border-top: 1px solid rgba(203, 224, 234, 0.5);
+            padding-top: 8px;
+        }
+        .todo-input-row input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 4px 2px;
+            font-size: 12.5px;
+            color: var(--ink);
+            outline: none;
+            font-family: var(--font);
+        }
+        .todo-input-row input::placeholder {
+            color: var(--ink-soft);
+            opacity: 0.5;
+        }
+        .todo-vinyl-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+            align-items: stretch;
+        }
+        .vinyl-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 1px;
+        }
+        .vinyl-disc {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            position: relative;
+            background:
+                repeating-radial-gradient(
+                    circle at center,
+                    rgba(20, 20, 22, 0.98) 0px,
+                    rgba(20, 20, 22, 0.98) 1.5px,
+                    rgba(38, 38, 42, 0.98) 2px,
+                    rgba(38, 38, 42, 0.98) 3.5px
+                );
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                0 4px 14px -4px rgba(0, 0, 0, 0.35),
+                0 12px 30px -12px rgba(0, 0, 0, 0.4);
+            animation: vinylSpin 24s linear infinite;
+            transition: transform 0.2s ease;
+        }
+        .vinyl-disc::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.18) 0%, transparent 35%),
+                radial-gradient(circle at 70% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 30%);
+            pointer-events: none;
+        }
+        .vinyl-slot:active .vinyl-disc {
+            transform: scale(0.96);
+        }
+        .vinyl-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            height: 44px;
+            margin-top: -22px;
+            margin-left: -22px;
+            border-radius: 50%;
+            background: var(--accent);
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+        .vinyl-label.has-img {
+            color: transparent;
+        }
+        .vinyl-label::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            margin-top: -2px;
+            margin-left: -2px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 2;
+        }
+        @keyframes vinylSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .vinyl-deck {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.32);
+            backdrop-filter: blur(24px) saturate(140%);
+            -webkit-backdrop-filter: blur(24px) saturate(140%);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 30px -16px rgba(36, 72, 100, 0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--ink);
+        }
+        .vinyl-arm {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            color: rgba(40, 40, 44, 0.9);
+        }
     </style>
 </head>
 <body>
@@ -1543,7 +1822,35 @@
                 </div>
                 </div>
                 <div class="desktop-page">
-                    <div class="page-empty-hint">第二页 · 待添加</div>
+                    <div class="photo-wall" id="photoWall">
+                        <div class="photo-item" data-idx="0"></div>
+                        <div class="photo-item" data-idx="1"></div>
+                        <div class="photo-item" data-idx="2"></div>
+                        <input type="file" id="wallFileInput" accept="*/*" style="display:none;" />
+                    </div>
+                    <div class="todo-vinyl-row">
+                        <div class="todo-card">
+                            <div class="todo-head">待办</div>
+                            <div class="todo-list" id="todoList"></div>
+                            <div class="todo-input-row">
+                                <input id="todoInput" placeholder="添加一条…" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="vinyl-slot" id="vinylSlot">
+                            <div class="vinyl-deck">
+                                <div class="vinyl-disc" id="vinylDisc">
+                                    <div class="vinyl-label" id="vinylLabel"></div>
+                                </div>
+                                <svg class="vinyl-arm" viewBox="0 0 150 150" aria-hidden="true">
+                                    <circle cx="122" cy="20" r="6" fill="none" stroke="currentColor" stroke-width="2.5"/>
+                                    <circle cx="122" cy="20" r="2" fill="currentColor"/>
+                                    <line x1="122" y1="20" x2="88" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                    <rect x="80" y="53" width="14" height="9" rx="2" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <input type="file" id="vinylFile" accept="*/*" style="display:none;" />
+                        </div>
+                    </div>
                 </div>
               </div>
                 <div class="pager-dots" id="pagerDots">
@@ -1792,6 +2099,9 @@
                 profile: { nickname: '', bio: '' },
                 profileBg: '',
                 albumPhoto: '',
+                albumWall: ['', '', ''],
+                todos: [],
+                vinylLabel: '',
                 bubbleBlur: true,
                 totalTokens: 0,
                 contextLimit: 10,
@@ -2177,6 +2487,228 @@
         })();
 
         renderAlbum();
+
+        function renderWall() {
+            const wall = document.getElementById('photoWall');
+            if (!wall) return;
+            // 数据容错：确保是长度 3 的数组
+            if (!Array.isArray(data.albumWall) || data.albumWall.length !== 3) {
+                const old = Array.isArray(data.albumWall) ? data.albumWall : [];
+                data.albumWall = [old[0] || '', old[1] || '', old[2] || ''];
+            }
+            const items = wall.querySelectorAll('.photo-item');
+            items.forEach((el) => {
+                const i = parseInt(el.dataset.idx, 10);
+                const url = data.albumWall[i] || '';
+                if (url) {
+                    el.classList.add('has-photo');
+                    el.classList.remove('empty');
+                    el.style.backgroundImage = 'url("' + url + '")';
+                } else {
+                    el.classList.remove('has-photo');
+                    el.classList.add('empty');
+                    el.style.backgroundImage = '';
+                }
+
+                // 点击选图
+                el.onclick = () => {
+                    const input = document.getElementById('wallFileInput');
+                    if (!input) return;
+                    input.dataset.idx = String(i);
+                    input.click();
+                };
+
+                // 长按清除
+                let __t;
+                el.ontouchstart = () => {
+                    __t = setTimeout(() => {
+                        if (!data.albumWall[i]) return;
+                        if (confirm('清除这张照片？')) {
+                            data.albumWall[i] = '';
+                            saveData();
+                            renderWall();
+                        }
+                    }, 700);
+                };
+                el.ontouchend = () => clearTimeout(__t);
+                el.ontouchmove = () => clearTimeout(__t);
+                el.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    if (!data.albumWall[i]) return;
+                    if (confirm('清除这张照片？')) {
+                        data.albumWall[i] = '';
+                        saveData();
+                        renderWall();
+                    }
+                };
+            });
+        }
+
+        (function bindWallFile() {
+            const input = document.getElementById('wallFileInput');
+            if (!input) return;
+            input.addEventListener('change', async (e) => {
+                const f = e.target.files[0];
+                const idx = parseInt(input.dataset.idx || '0', 10);
+                if (!f) { input.value = ''; return; }
+                if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); input.value = ''; return; }
+                try {
+                    const compressed = await compressImage(f, 800, 800, 0.75);
+                    if (!Array.isArray(data.albumWall) || data.albumWall.length !== 3) {
+                        const old = Array.isArray(data.albumWall) ? data.albumWall : [];
+                        data.albumWall = [old[0] || '', old[1] || '', old[2] || ''];
+                    }
+                    data.albumWall[idx] = compressed;
+                    try { saveData(); } catch (err) { alert('图片过大，存储失败！'); input.value = ''; return; }
+                    renderWall();
+                } catch (err) { alert('图片处理失败：' + err.message); }
+                input.value = '';
+            });
+        })();
+
+        renderWall();
+
+        function renderTodos() {
+            const list = document.getElementById('todoList');
+            if (!list) return;
+            if (!Array.isArray(data.todos)) data.todos = [];
+
+            if (!data.todos.length) {
+                list.innerHTML = '<div class="todo-empty">还没有待办，在下面加一条</div>';
+                return;
+            }
+
+            list.innerHTML = data.todos.map(t => `
+                <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
+                    <div class="todo-dot"></div>
+                    <div class="todo-text">${escHtml(t.text)}</div>
+                </div>
+            `).join('');
+
+            list.querySelectorAll('.todo-item').forEach(el => {
+                const id = el.dataset.todoId;
+
+                // 点击切换完成
+                el.addEventListener('click', (e) => {
+                    // 长按触发的 click 忽略（避免删除后又触发切换）
+                    if (el.dataset.__suppressClick === '1') {
+                        el.dataset.__suppressClick = '';
+                        return;
+                    }
+                    const t = data.todos.find(x => x.id === id);
+                    if (!t) return;
+                    t.done = !t.done;
+                    saveData();
+                    renderTodos();
+                });
+
+                // 长按删除
+                let __t;
+                el.addEventListener('touchstart', () => {
+                    __t = setTimeout(() => {
+                        el.dataset.__suppressClick = '1';
+                        if (confirm('删除这条待办？')) {
+                            data.todos = data.todos.filter(x => x.id !== id);
+                            saveData();
+                            renderTodos();
+                        }
+                    }, 700);
+                }, { passive: true });
+                el.addEventListener('touchend', () => clearTimeout(__t));
+                el.addEventListener('touchmove', () => clearTimeout(__t), { passive: true });
+
+                // 桌面端右键删除
+                el.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    // 触屏设备：长按已由 touchstart 处理，忽略 contextmenu，避免二次弹窗
+                    if ('ontouchstart' in window) return;
+                    if (confirm('删除这条待办？')) {
+                        data.todos = data.todos.filter(x => x.id !== id);
+                        saveData();
+                        renderTodos();
+                    }
+                });
+            });
+        }
+
+        // 输入框：回车添加
+        (function bindTodoInput() {
+            const input = document.getElementById('todoInput');
+            if (!input) return;
+            input.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const text = input.value.trim();
+                if (!text) return;
+                if (!Array.isArray(data.todos)) data.todos = [];
+                data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
+                saveData();
+                input.value = '';
+                renderTodos();
+            });
+        })();
+
+        renderTodos();
+
+        function renderVinyl() {
+            const slot = document.getElementById('vinylSlot');
+            const label = document.getElementById('vinylLabel');
+            const disc = document.getElementById('vinylDisc');
+            const file = document.getElementById('vinylFile');
+            if (!slot || !label || !disc || !file) return;
+
+            if (data.vinylLabel) {
+                label.style.backgroundImage = 'url("' + data.vinylLabel + '")';
+                label.textContent = '';
+                label.classList.add('has-img');
+            } else {
+                label.style.backgroundImage = '';
+                label.textContent = '语匣';
+                label.classList.remove('has-img');
+            }
+
+            slot.onclick = () => file.click();
+
+            // 长按清除中心图
+            let __t;
+            slot.ontouchstart = () => {
+                __t = setTimeout(() => {
+                    if (!data.vinylLabel) return;
+                    if (confirm('清除唱片中心图？')) {
+                        data.vinylLabel = '';
+                        saveData();
+                        renderVinyl();
+                    }
+                }, 700);
+            };
+            slot.ontouchend = () => clearTimeout(__t);
+            slot.ontouchmove = () => clearTimeout(__t);
+            slot.oncontextmenu = (e) => {
+                e.preventDefault();
+                if ('ontouchstart' in window) return;
+                if (!data.vinylLabel) return;
+                if (confirm('清除唱片中心图？')) {
+                    data.vinylLabel = '';
+                    saveData();
+                    renderVinyl();
+                }
+            };
+
+            file.onchange = async (e) => {
+                const f = e.target.files[0];
+                if (!f) return;
+                if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); file.value = ''; return; }
+                try {
+                    const compressed = await compressImage(f, 300, 300, 0.8);
+                    data.vinylLabel = compressed;
+                    try { saveData(); } catch (err) { alert('图片过大，存储失败！'); file.value = ''; return; }
+                    renderVinyl();
+                } catch (err) { alert('图片处理失败：' + err.message); }
+                file.value = '';
+            };
+        }
+
+        renderVinyl();
 
         // ============================================================
         //  设置页面
@@ -3766,7 +4298,7 @@
                     <label>背景图</label>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <input id="pfBg" value="${escHtml(data.profileBg || '')}" placeholder="图片 URL（留空=无背景）" style="flex:1;min-width:0;" />
-                        <button type="button" class="btn btn-sm btn-soft" id="pfBgPickBtn">📷</button>
+                        <button type="button" class="btn btn-sm btn-soft" id="pfBgPickBtn" style="display:inline-flex;align-items:center;justify-content:center;">${ICONS.camera}</button>
                         <input type="file" id="pfBgFile" accept="*/*" style="display:none;" />
                     </div>
                     <div class="text-muted" style="font-size:12px;margin-top:4px;">可填外链 URL，也可本地上传（自动压缩）</div>
@@ -4131,6 +4663,9 @@
         renderSettings();
         renderChars();
         renderWorldBooks();
+        renderWall();
+        renderTodos();
+        renderVinyl();
 
         // 点击模态框外部关闭
         modalMask.addEventListener('click', (e) => {
@@ -4194,5 +4729,26 @@
         console.log('语匣已启动');
         console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
+<script>
+setTimeout(function(){
+    function info(sel){
+        var el = document.querySelector(sel);
+        if (!el) return sel + ': 不存在';
+        var cs = getComputedStyle(el);
+        return sel + ' clientW=' + el.clientWidth + ' offsetW=' + el.offsetWidth
+            + ' pad=' + cs.padding + ' border=' + cs.borderLeftWidth + '/' + cs.borderRightWidth
+            + ' margin=' + cs.marginLeft + '/' + cs.marginRight;
+    }
+    var lines = [
+        info('.phone'),
+        info('.screen'),
+        info('.desktop'),
+        info('.desktop-pager'),
+        info('.desktop-page'),
+        info('.app-grid')
+    ];
+    alert(lines.join('\n'));
+}, 800);
+</script>
 </body>
 </html>
