@@ -1338,6 +1338,9 @@
                             <span>返回</span>
                         </div>
                         <span class="title" id="chatCharName">对话</span>
+                        <div id="chatSwitchSessionBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;" title="切换对话">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                        </div>
                         <div id="chatEditBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </div>
@@ -1410,7 +1413,6 @@
     </div><!-- /phone -->
 
     <!-- ===== 模态框容器 ===== -->
-    <div id="__debugPanel" style="display:none; position:fixed; top:0; left:0; right:0; background:rgba(0,0,0,0.85); color:#0f0; font-family:monospace; font-size:11px; padding:10px; z-index:99999; max-height:50vh; overflow-y:auto; white-space:pre-wrap; word-break:break-all;"></div>
     <div class="modal-mask" id="modalMask">
         <div class="modal-box" id="modalBox">
             <!-- 动态内容 -->
@@ -1434,12 +1436,6 @@
         //  数据层
         // ============================================================
         const DB_KEY = 'healPhoneData';
-        function __dbg(msg) {
-            const p = document.getElementById('__debugPanel');
-            if (!p) return;
-            p.style.display = 'block';
-            p.textContent += msg + '\n';
-        }
 
         function getDefaultData() {
             return {
@@ -1460,17 +1456,59 @@
         let data = loadData();
 
         function loadData() {
+            let d;
             try {
                 const raw = localStorage.getItem(DB_KEY);
                 if (raw) {
-                    const d = JSON.parse(raw);
+                    d = JSON.parse(raw);
                     // 保证字段完整
                     const def = getDefaultData();
                     for (const k in def) { if (!(k in d)) d[k] = def[k]; }
-                    return d;
+                } else {
+                    d = getDefaultData();
                 }
-            } catch (_) { /* ignore */ }
-            return getDefaultData();
+            } catch (_) { d = getDefaultData(); }
+            // 迁移：老数据 data.chats[charId]（数组）→ data.chats[sessionId] + 角色 sessions
+            migrateSessions(d);
+            return d;
+        }
+
+        // 把老的「data.chats[charId] = 数组」迁移成「角色 sessions + data.chats[sessionId]」
+        function migrateSessions(d) {
+            if (!d.characters || !d.chats) return;
+            d.characters.forEach(c => {
+                if (Array.isArray(c.sessions)) {
+                    // 已迁移过的角色，确保 chats 里有对应会话数组
+                    c.sessions.forEach(s => {
+                        if (!Array.isArray(d.chats[s.id])) d.chats[s.id] = [];
+                    });
+                    return;
+                }
+                c.sessions = [];
+                const oldArr = d.chats[c.id];
+                if (Array.isArray(oldArr)) {
+                    const sid = generateId();
+                    d.chats[sid] = oldArr;
+                    delete d.chats[c.id];
+                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now() });
+                } else {
+                    // 角色没有任何旧记录，建一个空默认会话
+                    const sid = generateId();
+                    d.chats[sid] = [];
+                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now() });
+                }
+            });
+        }
+
+        // 取当前角色当前会话的消息数组（统一入口，避免散落的 data.chats[xxx]）
+        function getCurrentSessionMsgs() {
+            if (!currentCharId || !currentSessionId) return [];
+            const arr = data.chats[currentSessionId];
+            if (!Array.isArray(arr)) {
+                data.chats[currentSessionId] = [];
+                return data.chats[currentSessionId];
+            }
+            return arr;
         }
 
         function saveData() {
@@ -1537,6 +1575,7 @@
         // ============================================================
         let currentPage = 'desktop';
         let currentCharId = null;
+        let currentSessionId = null;
         let currentApiId = null;
         let editingApiId = null;
         let editingCharId = null;
@@ -1831,7 +1870,7 @@
                 let emojiCount = (backup.emojis || []).length;
                 const meta = {
                     exportedAt: new Date().toISOString(),
-                    version: 'v1',
+                    version: 'v2',
                     includeKey: keepKey,
                     counts: {
                         apis: (backup.apis || []).length,
@@ -1880,6 +1919,28 @@
                             merged[k] = (k in incoming) ? incoming[k] : def[k];
                         }
                         if (!confirm('导入将覆盖当前所有数据（不可恢复），确认继续？')) return;
+
+                        // ===== 旧版数据迁移：兼容单会话结构 =====
+                        if (merged.chats && merged.characters) {
+                            merged.characters.forEach(ch => {
+                                // 如果角色没有 sessions 字段，说明是老备份
+                                if (!ch.sessions) {
+                                    const oldMsgs = merged.chats[ch.id];
+                                    if (Array.isArray(oldMsgs) && oldMsgs.length > 0) {
+                                        const sessionId = generateId();
+                                        merged.chats[sessionId] = oldMsgs;
+                                        ch.sessions = [{ id: sessionId, title: '默认对话', updatedAt: Date.now() }];
+                                        delete merged.chats[ch.id];
+                                    } else {
+                                        ch.sessions = [];
+                                    }
+                                }
+                                // 兼容旧版没有 apiId 字段
+                                if (typeof ch.apiId === 'undefined') ch.apiId = '';
+                            });
+                        }
+                        // ==========================================
+
                         data = merged;
                         saveData();
                         // 刷新界面
@@ -2068,13 +2129,16 @@
             charListEl.querySelectorAll('.chat-list-item').forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.charId;
-                    openChat(id);
+                    showSessionList(id);
                 });
             });
         }
 
         function getLastMessage(charId) {
-            const msgs = data.chats[charId] || [];
+            const ch = data.characters.find(c => c.id === charId);
+            if (!ch || !Array.isArray(ch.sessions) || !ch.sessions.length) return null;
+            const sorted = [...ch.sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            const msgs = data.chats[sorted[0].id] || [];
             if (!msgs.length) return null;
             const last = msgs[msgs.length - 1];
             return last.content.length > 30 ? last.content.slice(0, 30) + '…' : last.content;
@@ -2114,6 +2178,13 @@
                 <div class="form-group">
                     <label>角色设定</label>
                     <textarea id="charSetting" rows="4" placeholder="角色背景、性格、说话风格…">${escHtml(ch?.setting || '')}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>绑定 API（留空则跟随全局）</label>
+                    <select id="charApi">
+                        <option value="">— 跟随全局 API —</option>
+                        ${data.apis.map(a => `<option value="${a.id}" ${ch?.apiId === a.id ? 'selected' : ''}>${escHtml(a.name || '未命名')} · ${escHtml(a.model || '未选')}</option>`).join('')}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>绑定世界书</label>
@@ -2170,6 +2241,7 @@
                 const wbIds = Array.from(wbSelect.selectedOptions).map(opt => opt.value).filter(v => v);
                 const emojiSelect = document.getElementById('charEmoji');
                 const emojiIds = emojiSelect ? Array.from(emojiSelect.selectedOptions).map(o => o.value).filter(v => v) : [];
+                const apiId = document.getElementById('charApi').value;
 
                 if (isEdit) {
                     const idx = data.characters.findIndex(c => c.id === charId);
@@ -2182,6 +2254,7 @@
                             avatar,
                             worldBooks: wbIds,
                             emojis: emojiIds,
+                            apiId,
                             updatedAt: Date.now(),
                         };
                     }
@@ -2194,11 +2267,15 @@
                         avatar,
                         worldBooks: wbIds,
                         emojis: emojiIds,
+                        apiId,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
-                    // 初始化聊天记录
-                    data.chats[data.characters[data.characters.length - 1].id] = [];
+                    // 初始化：建一个默认会话
+                    const newCh = data.characters[data.characters.length - 1];
+                    const sid = generateId();
+                    data.chats[sid] = [];
+                    newCh.sessions = [{ id: sid, title: '默认对话', updatedAt: Date.now() }];
                 }
                 saveData();
                 modalMask.classList.remove('open');
@@ -2209,10 +2286,103 @@
         // ============================================================
         //  微信 - 聊天
         // ============================================================
-        function openChat(charId) {
+        function showSessionList(charId) {
+            const ch = data.characters.find(c => c.id === charId);
+            if (!ch) return;
+            const sessions = Array.isArray(ch.sessions) ? ch.sessions : [];
+            const sorted = [...sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            const listHtml = sorted.length
+                ? sorted.map(s => {
+                      const msgs = data.chats[s.id] || [];
+                      const last = msgs.length ? msgs[msgs.length - 1] : null;
+                      const lastText = last ? String(last.content || '').slice(0, 24) : '空对话';
+                      return `
+                      <div class="card" style="display:flex;align-items:center;gap:10px;cursor:pointer;" data-session-id="${s.id}">
+                          <div style="flex:1;min-width:0;" data-action="enterSession">
+                              <div style="font-weight:600;">${escHtml(s.title || '未命名对话')}</div>
+                              <div class="text-muted" style="font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(lastText)}</div>
+                          </div>
+                          <button class="btn btn-sm btn-soft" data-action="renameSession" data-session-id="${s.id}">改名</button>
+                          <button class="btn btn-sm btn-danger" data-action="deleteSession" data-session-id="${s.id}">删除</button>
+                      </div>`;
+                  }).join('')
+                : `<div class="text-muted" style="text-align:center;padding:20px;">还没有对话</div>`;
+
+            modalBox.innerHTML = `
+                <div class="modal-title">${escHtml(ch.name || '对话')} · 选择对话</div>
+                <div id="sessionListBody">${listHtml}</div>
+                <div class="modal-actions" style="margin-top:12px;">
+                    <button class="btn btn-soft" id="modalCancel">返回</button>
+                    <button class="btn btn-primary" id="newSessionBtn">+ 新建对话</button>
+                </div>
+            `;
+            modalMask.classList.add('open');
+
+            // 进入会话
+            modalBox.querySelectorAll('[data-action="enterSession"]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const row = el.closest('[data-session-id]');
+                    const sid = row.dataset.sessionId;
+                    modalMask.classList.remove('open');
+                    openChat(charId, sid);
+                });
+            });
+            // 重命名
+            modalBox.querySelectorAll('[data-action="renameSession"]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const sid = el.dataset.sessionId;
+                    const s = ch.sessions.find(x => x.id === sid);
+                    if (!s) return;
+                    const t = prompt('对话名称：', s.title || '');
+                    if (t && t.trim()) {
+                        s.title = t.trim();
+                        s.updatedAt = Date.now();
+                        saveData();
+                        showSessionList(charId);
+                    }
+                });
+            });
+            // 删除
+            modalBox.querySelectorAll('[data-action="deleteSession"]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const sid = el.dataset.sessionId;
+                    if (ch.sessions.length <= 1) { alert('至少保留一个对话'); return; }
+                    if (!confirm('删除此对话？')) return;
+                    ch.sessions = ch.sessions.filter(x => x.id !== sid);
+                    delete data.chats[sid];
+                    saveData();
+                    showSessionList(charId);
+                });
+            });
+            // 新建
+            document.getElementById('newSessionBtn').addEventListener('click', () => {
+                const sid = generateId();
+                data.chats[sid] = [];
+                ch.sessions.push({ id: sid, title: '对话 ' + (ch.sessions.length + 1), updatedAt: Date.now() });
+                saveData();
+                modalMask.classList.remove('open');
+                openChat(charId, sid);
+            });
+            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
+        }
+
+        function openChat(charId, sessionId) {
             const ch = data.characters.find(c => c.id === charId);
             if (!ch) return;
             currentCharId = charId;
+            // 确定会话：指定则用，否则取角色最近一个会话，再否则新建
+            let sid = sessionId;
+            const sessions = Array.isArray(ch.sessions) ? ch.sessions : [];
+            if (!sid || !sessions.find(s => s.id === sid)) {
+                if (sessions.length) sid = sessions.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0].id;
+                else {
+                    sid = generateId();
+                    data.chats[sid] = [];
+                    ch.sessions = [{ id: sid, title: '默认对话', updatedAt: Date.now() }];
+                    saveData();
+                }
+            }
+            currentSessionId = sid;
             chatCharName.textContent = ch.name || '对话';
             document.getElementById('wechatBody').style.display = 'none';
             document.getElementById('page-wechat').classList.add('chatting');
@@ -2229,6 +2399,7 @@
             document.getElementById('wechatBody').style.display = 'block';
             document.getElementById('page-wechat').classList.remove('chatting');
             currentCharId = null;
+            currentSessionId = null;
             // 更新人设列表中的时间
             renderChars();
         }
@@ -2246,8 +2417,18 @@
             });
         }
 
+        const chatSwitchSessionBtn = document.getElementById('chatSwitchSessionBtn');
+        if (chatSwitchSessionBtn) {
+            chatSwitchSessionBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (!currentCharId) return;
+                showSessionList(currentCharId);
+            });
+        }
+
         function renderMessages(charId) {
-            const msgs = data.chats[charId] || [];
+            const msgs = getCurrentSessionMsgs();
             if (!msgs.length) {
                 chatMessages.innerHTML = `
                     <div class="msg-row system"><div class="msg system">💬 开始对话吧</div></div>
@@ -2422,8 +2603,8 @@
             addMessage(currentCharId, 'user', text);
             chatInput.value = '';
 
-            // 获取 API：优先取 currentApiId，无则兜底第一个
-            let api = data.apis.find(a => a.id === data.currentApiId);
+            // 获取 API：角色绑定的 apiId 优先，无则跟随全局 currentApiId，再兜底第一个
+            let api = data.apis.find(a => a.id === (ch.apiId || data.currentApiId));
             if (!api) api = data.apis[0];
             if (!api) {
                 addMessage(currentCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
@@ -2530,7 +2711,7 @@
                 }
 
                 // 获取历史消息
-                const history = data.chats[currentCharId] || [];
+                const history = getCurrentSessionMsgs();
                 const messages = [];
                 if (systemPrompt) {
                     messages.push({ role: 'system', content: systemPrompt });
@@ -2545,7 +2726,7 @@
 
                 // 创建流式气泡：边收边显示（微信式逐字出字）
                 streamMsg = { role: 'assistant', content: '', timestamp: Date.now(), streaming: true };
-                data.chats[currentCharId].push(streamMsg);
+                getCurrentSessionMsgs().push(streamMsg);
                 renderMessages(currentCharId);
                 streamEl = chatMessages.querySelector('.msg.streaming');
                 streamed = '';
@@ -2599,11 +2780,6 @@
                             if (payload === '[DONE]') { buffer = ''; break; }
                             try {
                                 const json = JSON.parse(payload);
-                                if (json.usage) {
-                                    __dbg('[USAGE] ' + JSON.stringify(json.usage));
-                                } else if (json.choices && json.choices.length === 0) {
-                                    __dbg('[EMPTY-CHOICES] ' + JSON.stringify(json).slice(0, 200));
-                                }
                                 if (json.usage) usageInfo = json.usage;
                                 const delta = json.choices?.[0]?.delta;
                                 if (!delta) continue;
@@ -2632,7 +2808,6 @@
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
-                    __dbg('[NON-STREAM] hasUsage=' + !!json.usage + ' keys=' + Object.keys(json).join(','));
                     if (json.usage) streamMsg.tokens = (json.usage.prompt_tokens || 0) + (json.usage.completion_tokens || 0);
                     const msg0 = json.choices?.[0]?.message;
                     thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
@@ -2668,7 +2843,7 @@
                         if (thinkBuf) streamMsg.think = thinkBuf.trim();
                         delete streamMsg.streaming;
                     } else {
-                        const arr = data.chats[currentCharId] || [];
+                        const arr = getCurrentSessionMsgs();
                         const i = arr.indexOf(streamMsg);
                         if (i > -1) arr.splice(i, 1);
                     }
@@ -2685,12 +2860,16 @@
         }
 
         function addMessage(charId, role, content, extra = {}) {
-            if (!data.chats[charId]) data.chats[charId] = [];
+            const msgs = getCurrentSessionMsgs();
             const msg = { role, content, timestamp: Date.now(), ...extra };
-            data.chats[charId].push(msg);
-            // 更新角色更新时间
+            msgs.push(msg);
+            // 更新角色 & 当前会话时间
             const ch = data.characters.find(c => c.id === charId);
             if (ch) ch.updatedAt = Date.now();
+            if (ch && Array.isArray(ch.sessions)) {
+                const cur = ch.sessions.find(s => s.id === currentSessionId);
+                if (cur) cur.updatedAt = Date.now();
+            }
             saveData();
             renderMessages(charId);
             // 滚动到底部
@@ -3203,16 +3382,20 @@
             });
             // 示例人设
             const charId = generateId();
+            const seedSessionId = generateId();
             data.characters.push({
                 id: charId,
                 name: '小治愈',
                 note: '温柔的朋友',
                 setting: '你是一个温柔、善解人意的朋友，喜欢用温暖的话语安慰他人。说话风格柔和，常用"～"和"呢"。',
                 worldBooks: [],
+                emojis: [],
+                apiId: '',
+                sessions: [{ id: seedSessionId, title: '默认对话', updatedAt: Date.now() }],
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
             });
-            data.chats[charId] = [
+            data.chats[seedSessionId] = [
                 { role: 'assistant', content: '你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
                 { role: 'user', content: '今天有点累呢…', timestamp: Date.now() - 3000000 },
                 { role: 'assistant', content: '辛苦了～\n记得照顾好自己\n累了就歇一歇\n我在这里陪你呢。', think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
