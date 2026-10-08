@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v24 · AI 互动</title>
+    <title>语匣 v26 · AI 互动</title>
     <link rel="icon" type="image/png" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <link rel="apple-touch-icon" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <style>
@@ -1943,6 +1943,13 @@
                             <span class="text-muted" style="font-size:12px;">传给 API 的历史消息条数（0 = 不限制）</span>
                         </div>
                     </div>
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">最大回复长度 (max_tokens)</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="number" id="maxTokensInput" min="1" max="32768" value="800" style="width:110px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--ink);background:rgba(255,255,255,0.5);" />
+                            <span class="text-muted" style="font-size:12px;">限制单次回复长度（1~32768，太小会截断）</span>
+                        </div>
+                    </div>
                     <div id="bubbleBlurCardSlot"></div>
                     <div id="chatDimCardSlot"></div>
                     <!-- 数据备份 -->
@@ -1968,6 +1975,7 @@
                             <button class="btn btn-sm btn-soft" id="tokenClearBtn">清零</button>
                         </div>
                         <div id="tokenTotalDisplay" style="font-size:26px;font-weight:600;color:var(--accent);margin-top:10px;letter-spacing:-0.3px;">0</div>
+                        <div id="tokenCacheDisplay" style="font-size:13px;color:var(--ink-soft);margin-top:6px;">缓存命中：—</div>
                     </div>
                     <div id="visionCardSlot"></div>
                     <div id="apiList"></div>
@@ -2152,7 +2160,10 @@
                 vinylLabel: '',
                 bubbleBlur: true,
                 totalTokens: 0,
+                totalCacheHitTokens: 0,
+                totalCacheMissTokens: 0,
                 contextLimit: 10,
+                maxTokens: 800,
                 chatWallpaperDim: 40,
             };
         }
@@ -2875,8 +2886,19 @@
             if (uaPreview) uaPreview.style.backgroundImage = data.userAvatar ? `url("${data.userAvatar}")` : '';
             const tokenDisp = document.getElementById('tokenTotalDisplay');
             if (tokenDisp) tokenDisp.textContent = (data.totalTokens || 0).toLocaleString('zh-CN');
+            const cacheDisp = document.getElementById('tokenCacheDisplay');
+            if (cacheDisp) {
+                const hit = data.totalCacheHitTokens || 0;
+                const miss = data.totalCacheMissTokens || 0;
+                const total = hit + miss;
+                cacheDisp.textContent = total > 0
+                    ? '缓存命中：' + hit.toLocaleString('zh-CN') + ' / ' + total.toLocaleString('zh-CN') + '（' + Math.round(hit / total * 100) + '%）'
+                    : '缓存命中：—';
+            }
             const cl = document.getElementById('contextLimitInput');
             if (cl) cl.value = (data.contextLimit === 0 || data.contextLimit) ? data.contextLimit : 10;
+            const mt = document.getElementById('maxTokensInput');
+            if (mt) mt.value = (data.maxTokens || 800);
 
             const slot = document.getElementById('bubbleBlurCardSlot');
             if (slot) {
@@ -3255,6 +3277,10 @@
                     <input type="checkbox" id="apiSupportsVision" ${api?.supportsVision ? 'checked' : ''} style="width:auto;" />
                     <label for="apiSupportsVision" style="margin:0;cursor:pointer;">该模型支持多模态（可直接接收图片）</label>
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" id="apiStreamUsage" ${api?.streamUsage !== false ? 'checked' : ''} style="width:auto;" />
+                    <label for="apiStreamUsage" style="margin:0;cursor:pointer;">该 API 流式返回 usage（官方勾，中转站可不勾）</label>
+                </div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">取消</button>
                     <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
@@ -3343,7 +3369,7 @@
                 if (isEdit) {
                     const idx = data.apis.findIndex(a => a.id === apiId);
                     if (idx > -1) {
-                        data.apis[idx] = { ...data.apis[idx], name, url, key, model, supportsVision: document.getElementById('apiSupportsVision').checked };
+                        data.apis[idx] = { ...data.apis[idx], name, url, key, model, supportsVision: document.getElementById('apiSupportsVision').checked, streamUsage: document.getElementById('apiStreamUsage').checked };
                     }
                 } else {
                     data.apis.push({
@@ -3353,6 +3379,7 @@
                         key,
                         model,
                         supportsVision: document.getElementById('apiSupportsVision').checked,
+                        streamUsage: document.getElementById('apiStreamUsage').checked,
                         createdAt: Date.now(),
                     });
                 }
@@ -4082,14 +4109,17 @@
 
                 // 调用 API（流式 SSE，候选地址兜底）
                 const chatCandidates = buildChatCandidates(api.url);
-                const reqBody = JSON.stringify({
+                const reqBodyObj = {
                     model: api.model || 'gpt-3.5-turbo',
                     messages: messages,
-                    max_tokens: 800,
+                    max_tokens: (typeof data.maxTokens === 'number' && data.maxTokens > 0) ? data.maxTokens : 800,
                     temperature: 0.7,
-                    stream: true,
-                    stream_options: { include_usage: true }
-                });
+                    stream: true
+                };
+                if (api.streamUsage !== false) {
+                    reqBodyObj.stream_options = { include_usage: true };
+                }
+                const reqBody = JSON.stringify(reqBodyObj);
                 const reqHeaders = {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + api.key,
@@ -4100,6 +4130,21 @@
                         const r = await fetch(u, { method: 'POST', headers: reqHeaders, body: reqBody });
                         if (r.ok) { resp = r; break; }
                         const errText = await r.text();
+                        if (api.streamUsage !== false && /stream_options|unknown.*parameter|include_usage/i.test(errText)) {
+                            api.streamUsage = false;
+                            // 移除该参数重新发起
+                            const retryBody = JSON.parse(reqBody);
+                            delete retryBody.stream_options;
+                            const retryResp = await fetch(u, { method: 'POST', headers: reqHeaders, body: JSON.stringify(retryBody) });
+                            if (retryResp.ok) {
+                                resp = retryResp;
+                                lastErr = null;
+                                break;
+                            }
+                            // 如果重试也失败，继续走原有的错误处理
+                            lastErr = new Error('API 错误: ' + retryResp.status + ' @ ' + u + ' ' + await retryResp.text());
+                            continue;
+                        }
                         lastErr = new Error('API 错误: ' + r.status + ' @ ' + u + ' ' + errText);
                     } catch (err) { lastErr = err; }
                 }
@@ -4127,6 +4172,8 @@
                             try {
                                 const json = JSON.parse(payload);
                                 if (json.usage) usageInfo = json.usage;
+                                else if (json.choices && json.choices.length === 0 && json.usage) usageInfo = json.usage;
+                                // 同时兼容 choices 为空的独立 usage 块
                                 const delta = json.choices?.[0]?.delta;
                                 if (!delta) continue;
                                 // ① 原生思考字段（DeepSeek R1 等）
@@ -4155,6 +4202,8 @@
                     // 降级：非流式 JSON
                     const json = await resp.json();
                     if (json.usage) usageInfo = json.usage;
+                    else if (json.choices && json.choices.length === 0 && json.usage) usageInfo = json.usage;
+                    // 同时兼容 choices 为空的独立 usage 块
                     const msg0 = json.choices?.[0]?.message;
                     thinkBuf = msg0?.reasoning_content || msg0?.reasoning || '';
                     streamed = (msg0?.content || '').replace(/<\/?(think|thought|thinking)\b[^>]*>/gi, '');
@@ -4180,12 +4229,35 @@
                 if (usageInfo) {
                     usedTokens = (usageInfo.prompt_tokens || 0) + (usageInfo.completion_tokens || 0);
                 } else {
-                    const inChars = messages.reduce((n, m) => n + (m.content ? String(m.content).length : 0), 0);
-                    const outChars = (streamed || '').length + (thinkBuf || '').length;
-                    usedTokens = Math.round((inChars + outChars) / 1.6);
+                    function __estimateTokens(str) {
+                        if (!str) return 0;
+                        let cjk = 0, other = 0;
+                        for (const ch of String(str)) {
+                            if (/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af\u3000-\u303f\uff00-\uffef]/.test(ch)) cjk++;
+                            else other++;
+                        }
+                        return Math.round(cjk * 1.16 + other * 0.25);
+                    }
+                    let inTok = 0;
+                    messages.forEach(m => {
+                        if (Array.isArray(m.content)) {
+                            m.content.forEach(part => {
+                                if (part.type === 'text') inTok += __estimateTokens(part.text);
+                                else if (part.type === 'image_url') inTok += 800;
+                            });
+                        } else {
+                            inTok += __estimateTokens(m.content);
+                        }
+                    });
+                    const outTok = __estimateTokens(streamed) + __estimateTokens(thinkBuf);
+                    usedTokens = Math.round(inTok + outTok);
                 }
                 streamMsg.tokens = usedTokens;
                 data.totalTokens = (data.totalTokens || 0) + usedTokens;
+                if (usageInfo) {
+                    data.totalCacheHitTokens = (data.totalCacheHitTokens || 0) + (usageInfo.prompt_cache_hit_tokens || 0);
+                    data.totalCacheMissTokens = (data.totalCacheMissTokens || 0) + (usageInfo.prompt_cache_miss_tokens || 0);
+                }
                 delete streamMsg.streaming;
                 saveData();
                 renderMessages(currentCharId);
@@ -4419,7 +4491,8 @@
                 }],
                 stream: false
             };
-            // 注意：GLM-4V-Flash 不接受 max_tokens 参数，不要传
+            // ⚠️ 视觉模型（GLM-4V-Flash 等）不接受 max_tokens 参数，此处严禁添加该字段。
+            // 若未来需给桥接请求加参数，请先确认目标模型兼容性。
 
             const headers = {
                 'Content-Type': 'application/json',
@@ -5078,6 +5151,8 @@
             tokenClearBtn.addEventListener('click', () => {
                 if (!confirm('确定清零 Token 累计统计吗？')) return;
                 data.totalTokens = 0;
+                data.totalCacheHitTokens = 0;
+                data.totalCacheMissTokens = 0;
                 saveData();
                 renderSettings();
             });
@@ -5091,6 +5166,18 @@
                 if (v > 100) v = 100;
                 clInput.value = v;
                 data.contextLimit = v;
+                saveData();
+            });
+        }
+
+        const mtInput = document.getElementById('maxTokensInput');
+        if (mtInput) {
+            mtInput.addEventListener('change', () => {
+                let v = parseInt(mtInput.value, 10);
+                if (isNaN(v) || v < 1) v = 1;
+                if (v > 32768) v = 32768;
+                mtInput.value = v;
+                data.maxTokens = v;
                 saveData();
             });
         }
