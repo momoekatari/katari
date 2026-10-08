@@ -1463,7 +1463,7 @@
         .photo-wall {
             position: relative;
             width: 100%;
-            height: 290px;
+            height: 260px;
             padding: 10px;
             box-sizing: border-box;
             overflow: visible;
@@ -1518,7 +1518,7 @@
             z-index: 2;
         }
         .photo-item[data-idx="2"] {
-            top: 100px; left: 50%;
+            top: 70px; left: 50%;
             width: 160px; height: 120px;
             transform: translateX(-50%) rotate(-3deg);
             z-index: 4;
@@ -1532,6 +1532,19 @@
             -webkit-backdrop-filter: blur(24px) saturate(140%);
             border: 1px solid rgba(255, 255, 255, 0.45);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 30px -16px rgba(36, 72, 100, 0.22);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .todo-card:active { transform: scale(0.98); }
+
+        .todo-preview-hint {
+            font-size: 11.5px;
+            color: var(--ink-soft);
+            opacity: 0.55;
+            text-align: right;
+            padding-top: 6px;
+            border-top: 1px solid rgba(203, 224, 234, 0.5);
+            margin-top: 4px;
         }
         .todo-head {
             font-size: 13.5px;
@@ -1545,10 +1558,10 @@
             flex-direction: column;
             gap: 2px;
             margin-bottom: 8px;
-            max-height: 168px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--line) transparent;
+            /* 预览模式：限制 3 条高度，超出隐藏 */
+            max-height: 96px;
+            overflow: hidden;
+            position: relative;
         }
         .todo-list::-webkit-scrollbar {
             width: 3px;
@@ -1636,6 +1649,26 @@
             color: var(--ink-soft);
             opacity: 0.5;
         }
+
+        /* 弹窗内的待办列表样式 */
+        #todoModalList {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 50vh;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        #todoModalList .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 4px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        #todoModalList .todo-item:active { background: rgba(0,0,0,0.04); }
+
         .todo-vinyl-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1781,13 +1814,6 @@
                     <div class="clock-time" id="clockTime">--:--</div>
                     <div class="clock-date" id="clockDate">--</div>
                 </div>
-                <div class="calendar-card">
-                    <div class="calendar-head" id="calMonth">--</div>
-                    <div class="calendar-week">
-                        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-                    </div>
-                    <div class="calendar-grid" id="calGrid"></div>
-                </div>
                 <div class="profile-row">
                     <div class="profile-card" id="profileCard">
                         <div class="profile-bg" id="profileBg"></div>
@@ -1843,12 +1869,10 @@
                         <input type="file" id="wallFileInput" accept="*/*" style="display:none;" />
                     </div>
                     <div class="todo-vinyl-row">
-                        <div class="todo-card">
+                        <div class="todo-card" id="todoCard">
                             <div class="todo-head">待办</div>
                             <div class="todo-list" id="todoList"></div>
-                            <div class="todo-input-row">
-                                <input id="todoInput" placeholder="添加一条…" autocomplete="off" />
-                            </div>
+                            <div class="todo-preview-hint" id="todoPreviewHint">点击管理</div>
                         </div>
                         <div class="vinyl-slot" id="vinylSlot">
                             <div class="vinyl-deck">
@@ -1864,6 +1888,13 @@
                             </div>
                             <input type="file" id="vinylFile" accept="*/*" style="display:none;" />
                         </div>
+                    </div>
+                    <div class="calendar-card" style="margin-top:16px;">
+                        <div class="calendar-head" id="calMonth">--</div>
+                        <div class="calendar-week">
+                            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+                        </div>
+                        <div class="calendar-grid" id="calGrid"></div>
                     </div>
                 </div>
               </div>
@@ -2003,6 +2034,11 @@
                                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/><path d="M9 9h.01M15 9h.01" stroke-linecap="round"/></svg>
                                 发表情
                             </div>
+                            <div class="item" id="visionActionForUser">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                                发图片
+                            </div>
+                            <input type="file" id="visionFile" accept="*/*" style="display:none;" />
                         </div>
                         <div class="input-wrap">
                             <input id="chatInput" placeholder="输入消息…" autocomplete="off" />
@@ -2116,9 +2152,8 @@
                 albumPhoto: '',
                 albumWall: ['', '', ''],
                 todos: [],
-                visionApiKey: '',
-                visionApiUrl: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-                visionModel: 'glm-4v-flash',
+                visionBridgeApiId: '',
+                visionModel: '',
                 visionPrompt: '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。',
                 vinylLabel: '',
                 bubbleBlur: true,
@@ -2593,23 +2628,55 @@
             if (!Array.isArray(data.todos)) data.todos = [];
 
             if (!data.todos.length) {
-                list.innerHTML = '<div class="todo-empty">还没有待办，在下面加一条</div>';
-                return;
+                list.innerHTML = '<div class="todo-empty">还没有待办</div>';
+            } else {
+                const preview = data.todos.slice(0, 3);
+                list.innerHTML = preview.map(t => `
+                    <div class="todo-item ${t.done ? 'done' : ''}">
+                        <div class="todo-dot"></div>
+                        <div class="todo-text">${escHtml(t.text)}</div>
+                    </div>
+                `).join('');
             }
 
-            list.innerHTML = data.todos.map(t => `
-                <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
-                    <div class="todo-dot"></div>
-                    <div class="todo-text">${escHtml(t.text)}</div>
-                </div>
-            `).join('');
+            // 点击卡片 → 打开弹窗
+            const card = document.getElementById('todoCard');
+            if (card) {
+                card.onclick = () => openTodoModal();
+            }
+        }
 
-            list.querySelectorAll('.todo-item').forEach(el => {
+        function openTodoModal() {
+            const todos = Array.isArray(data.todos) ? data.todos : [];
+            const listHtml = todos.length
+                ? todos.map(t => `
+                    <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
+                        <div class="todo-dot"></div>
+                        <div class="todo-text">${escHtml(t.text)}</div>
+                    </div>
+                `).join('')
+                : '<div class="todo-empty">还没有待办，在下面加一条</div>';
+
+            modalBox.innerHTML = `
+                <div class="modal-title">待办</div>
+                <div id="todoModalList">${listHtml}</div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input id="todoModalInput" placeholder="添加一条…" autocomplete="off" />
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-soft" id="modalCancel">关闭</button>
+                </div>
+            `;
+            modalMask.classList.add('open');
+
+            const modalList = document.getElementById('todoModalList');
+            const modalInput = document.getElementById('todoModalInput');
+
+            // 绑定条目：点击切换完成，长按删除
+            modalList.querySelectorAll('.todo-item').forEach(el => {
                 const id = el.dataset.todoId;
 
-                // 点击切换完成
-                el.addEventListener('click', (e) => {
-                    // 长按触发的 click 忽略（避免删除后又触发切换）
+                el.addEventListener('click', () => {
                     if (el.dataset.__suppressClick === '1') {
                         el.dataset.__suppressClick = '';
                         return;
@@ -2618,10 +2685,11 @@
                     if (!t) return;
                     t.done = !t.done;
                     saveData();
+                    // 刷新弹窗内列表 + 卡片预览
+                    refreshTodoModal();
                     renderTodos();
                 });
 
-                // 长按删除
                 let __t;
                 el.addEventListener('touchstart', () => {
                     __t = setTimeout(() => {
@@ -2629,43 +2697,97 @@
                         if (confirm('删除这条待办？')) {
                             data.todos = data.todos.filter(x => x.id !== id);
                             saveData();
+                            refreshTodoModal();
                             renderTodos();
                         }
                     }, 700);
                 }, { passive: true });
                 el.addEventListener('touchend', () => clearTimeout(__t));
                 el.addEventListener('touchmove', () => clearTimeout(__t), { passive: true });
-
-                // 桌面端右键删除
                 el.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
-                    // 触屏设备：长按已由 touchstart 处理，忽略 contextmenu，避免二次弹窗
                     if ('ontouchstart' in window) return;
                     if (confirm('删除这条待办？')) {
                         data.todos = data.todos.filter(x => x.id !== id);
                         saveData();
+                        refreshTodoModal();
+                        renderTodos();
+                    }
+                });
+            });
+
+            // 输入框回车添加
+            modalInput.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const text = modalInput.value.trim();
+                if (!text) return;
+                data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
+                saveData();
+                modalInput.value = '';
+                refreshTodoModal();
+                renderTodos();
+            });
+
+            // 自动聚焦输入框，方便直接打字
+            setTimeout(() => modalInput.focus(), 200);
+
+            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
+        }
+
+        function refreshTodoModal() {
+            const modalList = document.getElementById('todoModalList');
+            if (!modalList) return;
+            const todos = Array.isArray(data.todos) ? data.todos : [];
+            modalList.innerHTML = todos.length
+                ? todos.map(t => `
+                    <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
+                        <div class="todo-dot"></div>
+                        <div class="todo-text">${escHtml(t.text)}</div>
+                    </div>
+                `).join('')
+                : '<div class="todo-empty">还没有待办，在下面加一条</div>';
+            // 重新绑定事件
+            modalList.querySelectorAll('.todo-item').forEach(el => {
+                const id = el.dataset.todoId;
+                el.addEventListener('click', () => {
+                    if (el.dataset.__suppressClick === '1') {
+                        el.dataset.__suppressClick = '';
+                        return;
+                    }
+                    const t = data.todos.find(x => x.id === id);
+                    if (!t) return;
+                    t.done = !t.done;
+                    saveData();
+                    refreshTodoModal();
+                    renderTodos();
+                });
+                let __t;
+                el.addEventListener('touchstart', () => {
+                    __t = setTimeout(() => {
+                        el.dataset.__suppressClick = '1';
+                        if (confirm('删除这条待办？')) {
+                            data.todos = data.todos.filter(x => x.id !== id);
+                            saveData();
+                            refreshTodoModal();
+                            renderTodos();
+                        }
+                    }, 700);
+                }, { passive: true });
+                el.addEventListener('touchend', () => clearTimeout(__t));
+                el.addEventListener('touchmove', () => clearTimeout(__t), { passive: true });
+                el.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if ('ontouchstart' in window) return;
+                    if (confirm('删除这条待办？')) {
+                        data.todos = data.todos.filter(x => x.id !== id);
+                        saveData();
+                        refreshTodoModal();
                         renderTodos();
                     }
                 });
             });
         }
-
-        // 输入框：回车添加
-        (function bindTodoInput() {
-            const input = document.getElementById('todoInput');
-            if (!input) return;
-            input.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter') return;
-                e.preventDefault();
-                const text = input.value.trim();
-                if (!text) return;
-                if (!Array.isArray(data.todos)) data.todos = [];
-                data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
-                saveData();
-                input.value = '';
-                renderTodos();
-            });
-        })();
 
         renderTodos();
 
@@ -2852,15 +2974,14 @@
                 if (!slot) return;
                 slot.innerHTML = `
                     <div class="card" style="margin-bottom:12px;">
-                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">视觉桥接</div>
-                        <div class="text-muted" style="font-size:12px;margin-bottom:10px;">给纯文本模型加识图能力：发图时先用 GLM-4V-Flash 识别，再把描述合并进消息</div>
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:6px;">视觉桥接</div>
+                        <div class="text-muted" style="font-size:12px;margin-bottom:10px;">给不支持多模态的聊天模型加识图能力：发图时先用「桥接 API」识别，再把描述合并进消息。</div>
                         <div class="form-group" style="margin-bottom:8px;">
-                            <label style="font-size:12px;">智谱 API Key</label>
-                            <input id="visionApiKey" value="${escHtml(data.visionApiKey || '')}" placeholder="在 open.bigmodel.cn 申请" style="padding:6px 10px;font-size:13px;" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:8px;">
-                            <label style="font-size:12px;">识图模型</label>
-                            <input id="visionModel" value="${escHtml(data.visionModel || 'glm-4v-flash')}" style="padding:6px 10px;font-size:13px;" />
+                            <label style="font-size:12px;">桥接 API（只能选已勾选「支持多模态」的 API）</label>
+                            <select id="visionBridgeApiId" style="padding:6px 10px;font-size:13px;">
+                                <option value="">— 不启用桥接 —</option>
+                                ${data.apis.filter(a => a.supportsVision).map(a => `<option value="${a.id}" ${data.visionBridgeApiId === a.id ? 'selected' : ''}>${escHtml(a.name || '未命名')} · ${escHtml(a.model || '未选')}</option>`).join('')}
+                            </select>
                         </div>
                         <div class="form-group" style="margin-bottom:8px;">
                             <label style="font-size:12px;">识图提示词</label>
@@ -2870,8 +2991,7 @@
                     </div>
                 `;
                 document.getElementById('visionSaveBtn').addEventListener('click', () => {
-                    data.visionApiKey = document.getElementById('visionApiKey').value.trim();
-                    data.visionModel = document.getElementById('visionModel').value.trim() || 'glm-4v-flash';
+                    data.visionBridgeApiId = document.getElementById('visionBridgeApiId').value;
                     data.visionPrompt = document.getElementById('visionPrompt').value.trim() || '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。';
                     saveData();
                     alert('视觉桥接配置已保存');
@@ -3100,6 +3220,10 @@
                     <div id="modelList" class="model-list mt-8"></div>
                     <div class="text-muted" style="font-size:12px;margin-top:6px;">点击 chip 或手动输入均可，保存时以手输为准</div>
                 </div>
+                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" id="apiSupportsVision" ${api?.supportsVision ? 'checked' : ''} style="width:auto;" />
+                    <label for="apiSupportsVision" style="margin:0;cursor:pointer;">该模型支持多模态（可直接接收图片）</label>
+                </div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="modalCancel">取消</button>
                     <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
@@ -3188,7 +3312,7 @@
                 if (isEdit) {
                     const idx = data.apis.findIndex(a => a.id === apiId);
                     if (idx > -1) {
-                        data.apis[idx] = { ...data.apis[idx], name, url, key, model };
+                        data.apis[idx] = { ...data.apis[idx], name, url, key, model, supportsVision: document.getElementById('apiSupportsVision').checked };
                     }
                 } else {
                     data.apis.push({
@@ -3197,6 +3321,7 @@
                         url,
                         key,
                         model,
+                        supportsVision: document.getElementById('apiSupportsVision').checked,
                         createdAt: Date.now(),
                     });
                 }
@@ -3586,6 +3711,18 @@
                     ? `<div class="think-hint" data-msg-idx="${idx}">${ICONS.think} 偷偷看看ta在想什么？</div>`
                     : '';
                 const extraHints = thinkHint;
+
+                // 用户图片消息：先渲染图片气泡
+                if (isUser && m.imageData) {
+                    const imgHtml = `<div class="msg ${cls} emoji-msg"><img src="${m.imageData}" alt="" style="max-width:160px;border-radius:12px;display:block;" /></div>`;
+                    const textPart = m.content && m.content !== '[图片]' && !m.content.startsWith('[图片识别中') ? m.content : '';
+                    let inner = `<div class="msg-bubble-wrap">${imgHtml}`;
+                    if (textPart) {
+                        inner += `<div class="msg ${cls}" style="margin-top:4px;">${escHtml(textPart)}</div>`;
+                    }
+                    inner += `</div>`;
+                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}${inner}</div>`;
+                }
 
                 // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
@@ -4088,6 +4225,74 @@
             });
         }
 
+        // 发图片入口
+        const visionActionForUser = document.getElementById('visionActionForUser');
+        const visionFile = document.getElementById('visionFile');
+        if (visionActionForUser && visionFile) {
+            visionActionForUser.addEventListener('click', () => {
+                actionPopup.classList.remove('open');
+                if (!currentCharId) return;
+                if (isResponding) { alert('AI 正在回复中，请稍候'); return; }
+                visionFile.click();
+            });
+            visionFile.addEventListener('change', async (e) => {
+                const f = e.target.files[0];
+                if (!f) { visionFile.value = ''; return; }
+                if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); visionFile.value = ''; return; }
+                visionFile.value = '';
+                try {
+                    const compressed = await compressImage(f, 800, 800, 0.75);
+                    const ch = data.characters.find(c => c.id === currentCharId);
+                    if (!ch) return;
+                    const chatApi = data.apis.find(a => a.id === (ch.apiId || data.currentApiId)) || data.apis[0];
+                    if (isApiVision(chatApi)) {
+                        // 模型支持多模态，直接发原图
+                        addMessage(currentCharId, 'user', '[图片]', { imageData: compressed });
+                    } else {
+                        // 走视觉桥接
+                        if (!data.visionBridgeApiId) {
+                            alert('当前模型不支持多模态，且未配置视觉桥接 API。\n请到设置页为聊天模型勾选多模态，或选择桥接 API。');
+                            return;
+                        }
+                        // 显示识图中状态
+                        const loadingMsg = { role: 'user', content: '[图片识别中…]', timestamp: Date.now() };
+                        getCurrentSessionMsgs().push(loadingMsg);
+                        renderMessages(currentCharId);
+
+                        let desc = '';
+                        try {
+                            desc = await describeImageWithGLM(compressed);
+                        } catch (err) {
+                            // 识别失败，移除加载消息
+                            const arr = getCurrentSessionMsgs();
+                            const li = arr.indexOf(loadingMsg);
+                            if (li > -1) arr.splice(li, 1);
+                            saveData();
+                            renderMessages(currentCharId);
+                            alert('识图失败：' + err.message);
+                            return;
+                        }
+
+                        // 替换加载消息为真实内容
+                        const arr = getCurrentSessionMsgs();
+                        const li = arr.indexOf(loadingMsg);
+                        if (li > -1) {
+                            arr[li] = {
+                                role: 'user',
+                                content: '[用户发送了一张图片]\n' + desc,
+                                timestamp: Date.now(),
+                                imageData: compressed
+                            };
+                        }
+                        saveData();
+                        renderMessages(currentCharId);
+                    }
+                } catch (err) {
+                    alert('图片处理失败：' + err.message);
+                }
+            });
+        }
+
         // ============================================================
         //  表情包
         // ============================================================
@@ -4129,6 +4334,66 @@
                 });
             });
             document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
+        }
+
+        // 判断 API 是否勾选了「支持多模态」
+        function isApiVision(api) {
+            return !!(api && api.supportsVision);
+        }
+
+        // 调用桥接 API 识别图片，返回描述文本
+        async function describeImageWithGLM(base64Data) {
+            const bridgeApi = data.apis.find(a => a.id === data.visionBridgeApiId);
+            if (!bridgeApi) throw new Error('未配置桥接 API，请到设置页选择');
+            if (!isApiVision(bridgeApi)) throw new Error('桥接 API 未勾选「支持多模态」');
+            const url = resolveChatUrl(bridgeApi.url);
+            const model = bridgeApi.model || '';
+            if (!model) throw new Error('桥接 API 未配置模型名');
+            const prompt = data.visionPrompt || '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。';
+
+            const body = {
+                model: model,
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        { type: 'image_url', image_url: { url: base64Data } }
+                    ]
+                }],
+                stream: false
+            };
+            // 注意：GLM-4V-Flash 不接受 max_tokens 参数，不要传
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + bridgeApi.key
+            };
+
+            // 指数退避重试（应对 429）
+            const delays = [0, 2000, 4000, 8000];
+            let lastErr = null;
+            for (let i = 0; i < delays.length; i++) {
+                if (delays[i] > 0) await new Promise(r => setTimeout(r, delays[i]));
+                try {
+                    const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+                    if (resp.status === 429) {
+                        lastErr = new Error('识别服务繁忙（429），重试中…');
+                        continue;
+                    }
+                    if (!resp.ok) {
+                        const errText = await resp.text();
+                        throw new Error('识图失败：HTTP ' + resp.status + ' ' + errText);
+                    }
+                    const json = await resp.json();
+                    const desc = json.choices?.[0]?.message?.content || '';
+                    if (!desc.trim()) throw new Error('识图返回为空');
+                    return desc.trim();
+                } catch (e) {
+                    lastErr = e;
+                    if (i === delays.length - 1) throw lastErr;
+                }
+            }
+            throw lastErr || new Error('识图失败');
         }
         function renderEmojiLib() {
             const list = data.emojis || [];
