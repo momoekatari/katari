@@ -286,6 +286,17 @@
             border-bottom: 1px solid var(--line);
             background: var(--paper);
         }
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-header #chatCharName {
+            flex: 1;
+            text-align: left;
+            padding-left: 16px;
+            justify-self: unset;
+        }
         .app-header .back { justify-self: start; }
         .app-header .title { justify-self: center; white-space: nowrap; }
         .app-header .right-action { justify-self: end; }
@@ -2153,10 +2164,6 @@
                 <!-- 聊天子视图 -->
                 <div id="chatView" style="display:none;flex-direction:column;flex:1;min-height:0;height:auto;overflow:hidden;">
                     <div class="app-header chat-header" style="border-bottom:1px solid var(--line);">
-                        <div class="back" id="chatBack">
-                            <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <span>返回</span>
-                        </div>
                         <span class="title" id="chatCharName">对话</span>
                         <div class="chat-header-actions">
                             <div id="chatTokenBtn" class="header-edit-btn glass-icon-btn" title="本对话 Token">
@@ -3898,8 +3905,6 @@
             // 更新人设列表中的时间
             renderChars();
         }
-
-        $('#chatBack').addEventListener('click', closeChat);
 
         // 聊天头部编辑按钮：打开当前角色编辑弹窗
         const chatEditBtn = document.getElementById('chatEditBtn');
