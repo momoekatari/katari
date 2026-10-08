@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v26 · AI 互动</title>
+    <title>语匣 v27 · AI 互动</title>
     <link rel="icon" type="image/png" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <link rel="apple-touch-icon" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <style>
@@ -825,6 +825,55 @@
             padding: 2px 0;
             word-break: break-word;
         }
+        .chat-messages .voice-bubble {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 48px;
+            padding: 0 16px;
+            background: color-mix(in srgb, var(--accent-deep) 45%, transparent);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            backdrop-filter: blur(22px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            border-radius: 18px;
+            box-sizing: border-box;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .chat-messages .voice-bubble .voice-waveform {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 30px;
+        }
+        .chat-messages .voice-bubble .voice-waveform span {
+            background: #fff;
+            display: block;
+            width: 3px;
+            border-radius: 1.5px;
+        }
+        .chat-messages .voice-bubble .voice-chevron {
+            width: 18px;
+            height: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+        .chat-messages .voice-text {
+            font-size: 13px;
+            color: var(--ink);
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-top: 6px;
+            line-height: 1.5;
+            word-break: break-word;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
         .chat-messages .msg-row.user .msg-row.action-row,
         .chat-messages .msg-row.user.action-row {
             display: none;
@@ -1453,6 +1502,11 @@
             background: var(--paper);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
+        }
+        body.no-bubble-blur .chat-messages .voice-bubble {
+            background: var(--accent-deep);
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
         }
         .album-card {
             position: relative;
@@ -3950,8 +4004,24 @@
 
                 // 语音 / 表情包：不拆分，整条渲染
                 if (m.isVoice) {
-                    const vcontent = `<div class="voice-label"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke-linecap="round"/><path d="M19 10v2a7 7 0 01-14 0v-2" stroke-linecap="round"/></svg>🎤 ${escHtml(m.content)}</div>`;
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${vcontent}</div></div></div>`;
+                    const len = (m.content || '').length;
+                    const bubbleW = Math.min(220, Math.max(80, 60 + len * 8));
+                    const barCount = Math.min(20, Math.max(5, Math.floor((bubbleW - 56) / 8)));
+                    const heights = [10, 20, 14, 26, 16, 22, 12, 24, 18, 28];
+                    let barsHtml = '';
+                    for (let i = 0; i < barCount; i++) {
+                        const h = heights[i % 10];
+                        barsHtml += '<span style="height:' + h + 'px;"></span>';
+                    }
+                    const bubbleHtml = '<div class="voice-bubble" style="width:' + bubbleW + 'px;">' +
+                        '<div class="voice-waveform">' + barsHtml + '</div>' +
+                        '<svg class="voice-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+                        '</div>' +
+                        '<div class="voice-text" style="display:none;">' + escHtml(m.content) + '</div>';
+                    return '<div class="msg-row ' + rowCls + '" data-msg-idx="' + idx + '">' +
+                        avatarDiv +
+                        '<div class="msg-bubble-wrap">' + bubbleHtml + '</div>' +
+                        '</div>';
                 }
 
                 // 普通消息：按换行拆成多段，每段先解析 [表情:名字] 再生成气泡
@@ -4029,6 +4099,58 @@
                     if (!m || !m.think) return;
                     const text = String(m.think).trim();
                     if (text) showThinkOverlay(m.think);
+                });
+            });
+
+            // 语音气泡：点击展开/收起文字
+            chatMessages.querySelectorAll('.voice-bubble').forEach(el => {
+                let __lpTimer;
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (el.dataset.__suppressClick === '1') {
+                        el.dataset.__suppressClick = '';
+                        return;
+                    }
+                    const wrap = el.parentElement;
+                    const textEl = wrap.querySelector('.voice-text');
+                    const chevron = el.querySelector('.voice-chevron path');
+                    if (!textEl || !chevron) return;
+                    const isOpen = textEl.style.display !== 'none';
+                    if (isOpen) {
+                        textEl.style.display = 'none';
+                        chevron.setAttribute('d', 'm6 9 6 6 6-6');
+                    } else {
+                        textEl.style.display = 'block';
+                        chevron.setAttribute('d', 'm18 15-6-6-6 6');
+                    }
+                });
+                el.addEventListener('touchstart', () => {
+                    __lpTimer = setTimeout(() => {
+                        el.dataset.__suppressClick = '1';
+                        const row = el.closest('.msg-row');
+                        const idx = parseInt(row.dataset.msgIdx, 10);
+                        if (isNaN(idx)) return;
+                        if (confirm('确定删除这条语音吗？')) {
+                            msgs.splice(idx, 1);
+                            saveData();
+                            renderMessages(currentCharId);
+                        }
+                    }, 700);
+                }, { passive: true });
+                el.addEventListener('touchend', () => clearTimeout(__lpTimer));
+                el.addEventListener('touchmove', () => clearTimeout(__lpTimer), { passive: true });
+                el.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if ('ontouchstart' in window) return;
+                    const row = el.closest('.msg-row');
+                    const idx = parseInt(row.dataset.msgIdx, 10);
+                    if (isNaN(idx)) return;
+                    if (confirm('确定删除这条语音吗？')) {
+                        msgs.splice(idx, 1);
+                        saveData();
+                        renderMessages(currentCharId);
+                    }
                 });
             });
 
@@ -4223,6 +4345,7 @@
                     systemPrompt += '\n【可用表情】\n如果想发表情，格式是 [表情:名字]。\n名字必须严格从下面清单里一字不差地选，选不出合适的就不发，用文字表达即可：\n';
                     systemPrompt += availableEmojis.map(e => e.name).join(' / ') + '\n';
                 }
+                systemPrompt += '\n【消息标记说明】\n用户消息前带 [语音] 前缀时，表示用户是用语音说的这段话。可以自然回应"听到你的语音"或"你说"，不必刻意强调。\n';
 
                 // 构建消息：连续 user 合并成一条（多模态图片走 vision 数组）
                 const messages = [];
@@ -4263,6 +4386,7 @@
                             // 纯文本模型：丢弃 imageData，只发 content（若 content 为 '[图片]' 则替换为提示文本）
                             let textContent = m.content || '';
                             if (textContent === '[图片]') textContent = '[用户发送了一张图片]';
+                            if (m.isVoice) textContent = '[语音] ' + textContent;
                             __pending.push({ type: 'text', text: textContent });
                         }
                     } else {
@@ -4506,18 +4630,28 @@
         voiceAction.addEventListener('click', () => {
             actionPopup.classList.remove('open');
             if (!currentCharId) return;
-            const voiceTexts = [
-                '嗯… 我在想呢 🤔',
-                '好的，我明白了～',
-                '稍等，让我想想…',
-                '哈哈，你说得对！',
-                '原来如此，我懂了。',
-                '有点意思，继续说说？',
-                '好的，收到！',
-                '这个嘛… 我觉得可以。',
-            ];
-            const text = voiceTexts[Math.floor(Math.random() * voiceTexts.length)];
-            addMessage(currentCharId, 'user', text, { isVoice: true });
+            if (isResponding) { alert('AI 正在回复中，请稍候'); return; }
+            modalBox.innerHTML = `
+                <div class="modal-title">发语音</div>
+                <div class="form-group">
+                    <label>语音内容</label>
+                    <textarea id="voiceInput" rows="3" placeholder="输入你想说的内容…"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-soft" id="modalCancel">取消</button>
+                    <button class="btn btn-primary" id="voiceSend">发送</button>
+                </div>
+            `;
+            modalMask.classList.add('open');
+            const ta = document.getElementById('voiceInput');
+            setTimeout(() => ta.focus(), 200);
+            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
+            document.getElementById('voiceSend').addEventListener('click', () => {
+                const text = ta.value.trim();
+                if (!text) { alert('请输入内容'); return; }
+                addMessage(currentCharId, 'user', text, { isVoice: true });
+                modalMask.classList.remove('open');
+            });
         });
 
         // 发表情入口
@@ -4985,7 +5119,7 @@
             modalBox.innerHTML = `
                 <div class="modal-title">${isEdit ? '编辑世界书' : '添加世界书'}</div>
                 <div class="form-group">
-                    <button type="button" class="btn btn-sm btn-soft" id="wbLoadPreset" style="width:100%;">📝 载入预设：动作描写</button>
+                    <button type="button" class="btn btn-sm btn-soft" id="wbLoadPreset" style="width:100%;">载入预设：动作描写</button>
                 </div>
                 <div class="form-group">
                     <label>名称</label>
