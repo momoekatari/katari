@@ -810,6 +810,25 @@
             padding: 2px 0 0;
             -webkit-tap-highlight-color: transparent;
         }
+        .chat-messages .msg-row.action-row {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 6px;
+            padding-left: 60px;
+        }
+        .chat-messages .msg-row.action-row .action-text {
+            font-size: 12px;
+            color: var(--ink-soft);
+            opacity: 0.7;
+            font-style: italic;
+            line-height: 1.5;
+            padding: 2px 0;
+            word-break: break-word;
+        }
+        .chat-messages .msg-row.user .msg-row.action-row,
+        .chat-messages .msg-row.user.action-row {
+            display: none;
+        }
         .chat-input-bar {
             display: flex;
             align-items: center;
@@ -1482,13 +1501,18 @@
         }
         .photo-item {
             position: absolute;
-            background: rgba(255, 255, 255, 0.92);
+            background: #ffffff;
             border-radius: 4px;
-            padding: 6px;
+            border-top: 10px solid #ffffff;
+            border-left: 10px solid #ffffff;
+            border-right: 10px solid #ffffff;
+            border-bottom: 34px solid #ffffff;
+            padding: 0;
             box-sizing: border-box;
+            background-clip: padding-box;
             box-shadow:
-                0 2px 6px rgba(36, 60, 80, 0.12),
-                0 8px 20px -8px rgba(36, 60, 80, 0.25);
+                0 4px 12px rgba(36, 60, 80, 0.15),
+                0 1px 3px rgba(36, 60, 80, 0.1);
             cursor: pointer;
             transition: opacity 0.2s ease;
             -webkit-tap-highlight-color: transparent;
@@ -1499,7 +1523,7 @@
         .photo-item:active { opacity: 0.85; }
         .photo-item.empty {
             background: rgba(255, 255, 255, 0.35);
-            border: 1.5px dashed rgba(95, 124, 144, 0.4);
+            border: 1.5px dashed rgba(95, 124, 144, 0.4) !important;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         }
@@ -1780,6 +1804,84 @@
             z-index: 5;
             color: rgba(40, 40, 44, 0.9);
         }
+
+        /* ===== 桌面组件底色 ===== */
+        /* 纯白底 */
+        body.desktop-white .profile-card,
+        body.desktop-white .album-card,
+        body.desktop-white .calendar-card,
+        body.desktop-white .todo-card,
+        body.desktop-white .vinyl-deck {
+            background: #ffffff;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-color: rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 16px -8px rgba(36, 72, 100, 0.18);
+        }
+        /* 浅灰底 */
+        body.desktop-gray .profile-card,
+        body.desktop-gray .album-card,
+        body.desktop-gray .calendar-card,
+        body.desktop-gray .todo-card,
+        body.desktop-gray .vinyl-deck {
+            background: #d4d4d4;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 16px -8px rgba(36, 72, 100, 0.18);
+        }
+        /* 纯黑底 */
+        body.desktop-black .profile-card,
+        body.desktop-black .album-card,
+        body.desktop-black .calendar-card,
+        body.desktop-black .todo-card,
+        body.desktop-black .vinyl-deck {
+            background: #1a1a1a;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.4);
+        }
+        /* 自定义底 */
+        body.desktop-custom .profile-card,
+        body.desktop-custom .album-card,
+        body.desktop-custom .calendar-card,
+        body.desktop-custom .todo-card,
+        body.desktop-custom .vinyl-deck {
+            background: var(--desktop-custom-bg, #cccccc);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 16px -8px rgba(36, 72, 100, 0.18);
+        }
+        /* 深色底文字转白（黑底与深色自定义共用） */
+        body.desktop-dark-text .profile-name,
+        body.desktop-dark-text .todo-head,
+        body.desktop-dark-text .calendar-head {
+            color: #ffffff;
+        }
+        body.desktop-dark-text .profile-bio,
+        body.desktop-dark-text .todo-text,
+        body.desktop-dark-text .todo-empty,
+        body.desktop-dark-text .todo-preview-hint,
+        body.desktop-dark-text .calendar-week span,
+        body.desktop-dark-text .calendar-grid .cal-day {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        body.desktop-dark-text .calendar-grid .cal-day.today {
+            background: var(--accent);
+            color: #ffffff;
+        }
+        body.desktop-dark-text .todo-dot {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        body.desktop-dark-text .todo-item.done .todo-dot {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        body.desktop-dark-text .profile-avatar {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -1951,6 +2053,7 @@
                         </div>
                     </div>
                     <div id="bubbleBlurCardSlot"></div>
+                    <div id="desktopCardStyleSlot"></div>
                     <div id="chatDimCardSlot"></div>
                     <!-- 数据备份 -->
                     <div class="card" style="margin-bottom:12px;">
@@ -2165,6 +2268,8 @@
                 contextLimit: 10,
                 maxTokens: 800,
                 chatWallpaperDim: 40,
+                desktopCardStyle: 'glass',
+                desktopCardColor: '#cccccc',
             };
         }
 
@@ -2282,6 +2387,13 @@
                 line: '#dcdcdc', accent: '#2c2c2c', accentDeep: '#0f0f0f',
                 bubbleUser: 'rgba(44, 44, 44, 0.42)',
                 bubbleAssistant: 'rgba(250, 250, 250, 0.55)',
+            },
+            sakura: {
+                name: '樱花',
+                bg: '#fceef1', paper: '#fff8fa', ink: '#4a3540', inkSoft: '#9d7e88',
+                line: '#f0d9e0', accent: '#e8a0b0', accentDeep: '#c97d8f',
+                bubbleUser: 'rgba(232, 160, 176, 0.42)',
+                bubbleAssistant: 'rgba(255, 248, 250, 0.55)',
             },
         };
 
@@ -2926,6 +3038,55 @@
                     });
                 }
             }
+
+            (function renderDesktopCardStyleCard(){
+                const slot = document.getElementById('desktopCardStyleSlot');
+                if (!slot) return;
+                const cur = data.desktopCardStyle || 'glass';
+                const opts = [
+                    { v: 'glass', label: '毛玻璃' },
+                    { v: 'white', label: '纯白' },
+                    { v: 'gray', label: '浅灰' },
+                    { v: 'black', label: '纯黑' },
+                    { v: 'custom', label: '自定义' }
+                ];
+                const curColor = data.desktopCardColor || '#cccccc';
+                slot.innerHTML = `
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:4px;">桌面组件底色</div>
+                        <div class="text-muted" style="font-size:12px;margin-bottom:10px;">仅影响桌面卡片，不影响图标托盘和聊天气泡</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                            ${opts.map(o => `
+                                <button class="btn btn-sm ${cur === o.v ? 'btn-primary' : 'btn-soft'}"
+                                        data-card-style="${o.v}"
+                                        style="flex:1;min-width:60px;">${o.label}</button>
+                            `).join('')}
+                        </div>
+                        <div id="customColorRow" style="display:${cur === 'custom' ? 'flex' : 'none'};align-items:center;gap:10px;margin-top:10px;">
+                            <input type="color" id="desktopCardColorInput" value="${curColor}" style="width:50px;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;cursor:pointer;" />
+                            <span class="text-muted" style="font-size:12px;">点击色块选色，自动匹配深/浅文字</span>
+                        </div>
+                    </div>
+                `;
+                slot.querySelectorAll('[data-card-style]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        data.desktopCardStyle = el.dataset.cardStyle;
+                        saveData();
+                        applyDesktopCardStyle();
+                        renderSettings();
+                    });
+                });
+                const colorInput = document.getElementById('desktopCardColorInput');
+                if (colorInput) {
+                    colorInput.addEventListener('input', () => {
+                        data.desktopCardColor = colorInput.value;
+                        applyDesktopCardStyle();
+                    });
+                    colorInput.addEventListener('change', () => {
+                        saveData();
+                    });
+                }
+            })();
 
             (function renderChatDimCard(){
                 const slot = document.getElementById('chatDimCardSlot');
@@ -3808,15 +3969,29 @@
                 }
                 // 每段先 parseEmojiSegments 拆成片段，再各自生成气泡；最后一片段挂 extraHints
                 const allSegs = [];
+                const __useAction = !isUser;   // 只对助手消息启用动作渲染
                 paras.forEach(p => {
-                    const segs = parseEmojiSegments(p, availableEmojis2);
-                    segs.forEach(s => allSegs.push(s));
+                    if (__useAction) {
+                        const aSegs = splitActionSegments(p);
+                        aSegs.forEach(aseg => {
+                            if (aseg.type === 'action') {
+                                allSegs.push({ type: 'action', text: aseg.text });
+                            } else {
+                                parseEmojiSegments(aseg.text, availableEmojis2).forEach(s => allSegs.push(s));
+                            }
+                        });
+                    } else {
+                        parseEmojiSegments(p, availableEmojis2).forEach(s => allSegs.push(s));
+                    }
                 });
                 if (!allSegs.length) {
                     return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
                 }
                 const rows = allSegs.map((seg, i) => {
                     const last = (i === allSegs.length - 1) ? extraHints : '';
+                    if (seg.type === 'action') {
+                        return `<div class="msg-row action-row" data-msg-idx="${idx}"><div class="action-text">${escHtml(seg.text)}</div>${last}</div>`;
+                    }
                     if (seg.type === 'emoji') {
                         const em = seg.emoji;
                         return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} emoji-msg"><img src="${escHtml(em.url)}" alt="${escHtml(em.name)}" /></div>${last}</div></div>`;
@@ -4810,6 +4985,9 @@
             modalBox.innerHTML = `
                 <div class="modal-title">${isEdit ? '编辑世界书' : '添加世界书'}</div>
                 <div class="form-group">
+                    <button type="button" class="btn btn-sm btn-soft" id="wbLoadPreset" style="width:100%;">📝 载入预设：动作描写</button>
+                </div>
+                <div class="form-group">
                     <label>名称</label>
                     <input id="wbName" value="${escHtml(wb?.name || '')}" placeholder="世界书名称" />
                 </div>
@@ -4832,6 +5010,26 @@
 
             modalMask.classList.add('open');
 
+
+            const presetBtn = document.getElementById('wbLoadPreset');
+            if (presetBtn) {
+                presetBtn.addEventListener('click', () => {
+                    document.getElementById('wbName').value = '动作描写';
+                    document.getElementById('wbContent').value =
+                        '在回复中，可以用全角括号（）描写角色的动作、神态或心理活动。\n' +
+                        '括号内容会以旁白形式独立显示，不占用对话气泡。\n' +
+                        '\n' +
+                        '示例：\n' +
+                        '（轻轻笑了笑）你好呀，今天过得怎么样？\n' +
+                        '（歪头看着你）在发呆吗？\n' +
+                        '\n' +
+                        '规则：\n' +
+                        '- 只用全角括号（），不要用半角 ()\n' +
+                        '- 括号内容一句话以内，简洁为上\n' +
+                        '- 可以在说话前或说话后描写，但不要每句都加\n' +
+                        '- 动作描写要与情境和角色性格相符';
+                });
+            }
 
             // 分组新建
             const groupSelect = document.getElementById('wbGroup');
@@ -4993,6 +5191,31 @@
             }
         }
 
+        function applyDesktopCardStyle() {
+            const s = data.desktopCardStyle || 'glass';
+            document.body.classList.remove(
+                'desktop-white', 'desktop-gray', 'desktop-black',
+                'desktop-custom', 'desktop-dark-text'
+            );
+            if (s === 'white') document.body.classList.add('desktop-white');
+            if (s === 'gray') document.body.classList.add('desktop-gray');
+            if (s === 'black') {
+                document.body.classList.add('desktop-black');
+                document.body.classList.add('desktop-dark-text');
+            }
+            if (s === 'custom') {
+                document.body.classList.add('desktop-custom');
+                const c = data.desktopCardColor || '#cccccc';
+                document.documentElement.style.setProperty('--desktop-custom-bg', c);
+                const hex = c.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                if (lum <= 128) document.body.classList.add('desktop-dark-text');
+            }
+        }
+
         function applyChatDim() {
             const v = (typeof data.chatWallpaperDim === 'number') ? data.chatWallpaperDim : 40;
             document.documentElement.style.setProperty('--chat-dim', String(v));
@@ -5014,6 +5237,22 @@
             }
             const rest = text.slice(last);
             if (rest && rest.trim() !== '') parts.push({ type: 'text', text: rest });
+            return parts;
+        }
+
+        function splitActionSegments(text) {
+            const parts = [];
+            const regex = /（([^（）]*)）/g;
+            let last = 0, m;
+            while ((m = regex.exec(text)) !== null) {
+                const before = text.slice(last, m.index);
+                if (before) parts.push({ type: 'text', text: before });
+                const inner = m[1].trim();
+                if (inner) parts.push({ type: 'action', text: inner });
+                last = regex.lastIndex;
+            }
+            const rest = text.slice(last);
+            if (rest) parts.push({ type: 'text', text: rest });
             return parts;
         }
 
@@ -5054,13 +5293,13 @@
                 updatedAt: Date.now(),
             });
             data.chats[seedSessionId] = [
-                { role: 'assistant', content: '你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
+                { role: 'assistant', content: '（轻轻挥手）你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
                 { role: 'user', content: '今天有点累呢…', timestamp: Date.now() - 3000000 },
-                { role: 'assistant', content: '辛苦了～\n记得照顾好自己\n累了就歇一歇\n我在这里陪你呢。', think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
+                { role: 'assistant', content: '（歪了歪头）辛苦了～\n记得照顾好自己\n累了就歇一歇\n我在这里陪你呢。', think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
                 { role: 'user', content: '其实也不算太累\n就是加班有点烦\n老板今天又加需求了', timestamp: Date.now() - 1800000 },
-                { role: 'assistant', content: '啊，加班确实容易心烦呢～\n老板加需求这种事，真的会让人无奈。\n不过你已经撑到现在了，很厉害了哦！\n要不要休息一下，喝杯水？', think: '用户倾诉加班和老板加需求，这是情绪累积。先共情认可情绪（确实烦），再肯定用户的努力（撑到现在很厉害），最后给一个轻松的小建议（喝水休息）。分四段说，节奏不压迫。', timestamp: Date.now() - 1200000 },
+                { role: 'assistant', content: '（皱了皱眉）啊，加班确实容易心烦呢～\n老板加需求这种事，真的会让人无奈。\n（笑着看你）不过你已经撑到现在了，很厉害了哦！\n要不要休息一下，喝杯水？', think: '用户倾诉加班和老板加需求，这是情绪累积。先共情认可情绪（确实烦），再肯定用户的努力（撑到现在很厉害），最后给一个轻松的小建议（喝水休息）。分四段说，节奏不压迫。', timestamp: Date.now() - 1200000 },
                 { role: 'user', content: '嗯…你说得对\n谢谢小治愈！', timestamp: Date.now() - 600000 },
-                { role: 'assistant', content: '不客气～\n随时来找我聊天\n我一直都在的 🌿', timestamp: Date.now() - 300000 },
+                { role: 'assistant', content: '（眨了眨眼）不客气～\n随时来找我聊天\n（轻声）我一直都在的 🌿', timestamp: Date.now() - 300000 },
             ];
             // 示例世界书
             data.worldBooks.push({
@@ -5087,6 +5326,7 @@
         // 启动
         applyTheme(data.theme);
         applyBubbleBlur();
+        applyDesktopCardStyle();
         applyChatDim();
         showPage('desktop');
         (function bindPager() {
