@@ -26,6 +26,7 @@
             --shadow: rgba(36, 60, 80, 0.08);
             --radius: 20px;
             --radius-sm: 12px;
+            --chat-dim: 40;
             --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
@@ -636,7 +637,7 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            background: transparent;
+            background: color-mix(in srgb, var(--paper) calc(var(--chat-dim, 40) * 1%), transparent);
         }
         .chat-messages .msg {
             max-width: 85%;
@@ -1943,6 +1944,7 @@
                         </div>
                     </div>
                     <div id="bubbleBlurCardSlot"></div>
+                    <div id="chatDimCardSlot"></div>
                     <!-- 数据备份 -->
                     <div class="card" style="margin-bottom:12px;">
                         <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">数据备份</div>
@@ -2151,6 +2153,7 @@
                 bubbleBlur: true,
                 totalTokens: 0,
                 contextLimit: 10,
+                chatWallpaperDim: 40,
             };
         }
 
@@ -2280,11 +2283,6 @@
             return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         }
 
-        function formatDate(ts) {
-            const d = new Date(ts);
-            return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-        }
-
         // ============================================================
         //  状态管理
         // ============================================================
@@ -2295,7 +2293,6 @@
         let editingApiId = null;
         let editingCharId = null;
         let editingWbId = null;
-        let editingWbGroup = null;
         let isResponding = false;
         const RENDER_BATCH = 30;
         let __renderCount = RENDER_BATCH;
@@ -2313,12 +2310,10 @@
             worldbook: $('#page-worldbook'),
             emoji: $('#page-emoji'),
         };
-        const settingsBody = $('#settingsBody');
         const apiListEl = $('#apiList');
         const apiEmpty = $('#apiEmpty');
         const charListEl = $('#charList');
         const charEmpty = $('#charEmpty');
-        const wechatTitle = $('#wechatTitle');
         const chatView = $('#chatView');
         const chatMessages = $('#chatMessages');
         const chatCharName = $('#chatCharName');
@@ -2910,6 +2905,37 @@
                 }
             }
 
+            (function renderChatDimCard(){
+                const slot = document.getElementById('chatDimCardSlot');
+                if (!slot) return;
+                const v = (typeof data.chatWallpaperDim === 'number') ? data.chatWallpaperDim : 40;
+                slot.innerHTML = `
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                            <div>
+                                <div style="font-size:14px;font-weight:500;color:var(--ink);">聊天壁纸蒙版</div>
+                                <div class="text-muted" style="font-size:12px;margin-top:2px;">仅影响聊天界面，值越大壁纸越淡</div>
+                            </div>
+                            <div id="chatDimVal" style="font-size:13px;color:var(--accent);font-weight:600;">${v}%</div>
+                        </div>
+                        <input type="range" id="chatDimSlider" min="0" max="100" value="${v}" style="width:100%;" />
+                    </div>
+                `;
+                const slider = document.getElementById('chatDimSlider');
+                const valEl = document.getElementById('chatDimVal');
+                if (slider) {
+                    slider.addEventListener('input', () => {
+                        const nv = parseInt(slider.value, 10) || 0;
+                        data.chatWallpaperDim = nv;
+                        if (valEl) valEl.textContent = nv + '%';
+                        applyChatDim();
+                    });
+                    slider.addEventListener('change', () => {
+                        saveData();
+                    });
+                }
+            })();
+
             const list = data.apis;
             if (list.length === 0) {
                 apiListEl.innerHTML = '';
@@ -3009,6 +3035,19 @@
                 applyWallpaper();
                 const pv = document.getElementById('wallpaperPreview');
                 if (pv) pv.style.backgroundImage = data.wallpaper ? `url("${data.wallpaper}")` : '';
+            });
+        }
+
+        const wpClearBtn = document.getElementById('wallpaperClear');
+        if (wpClearBtn) {
+            wpClearBtn.addEventListener('click', () => {
+                data.wallpaper = '';
+                const input = document.getElementById('wallpaperInput');
+                if (input) input.value = '';
+                saveData();
+                applyWallpaper();
+                const pv = document.getElementById('wallpaperPreview');
+                if (pv) pv.style.backgroundImage = '';
             });
         }
 
@@ -4881,6 +4920,11 @@
             }
         }
 
+        function applyChatDim() {
+            const v = (typeof data.chatWallpaperDim === 'number') ? data.chatWallpaperDim : 40;
+            document.documentElement.style.setProperty('--chat-dim', String(v));
+        }
+
         // 将文本按 [表情:名字] 标记拆成片段：命中的转成 emoji 片段，没命中的当纯文字
         function parseEmojiSegments(text, emojiList) {
             const parts = [];
@@ -4970,6 +5014,7 @@
         // 启动
         applyTheme(data.theme);
         applyBubbleBlur();
+        applyChatDim();
         showPage('desktop');
         (function bindPager() {
             const pager = document.getElementById('desktopPager');
@@ -5058,9 +5103,6 @@
         document.getElementById('wallpaperClear').innerHTML = ICONS.clear + ' 清除';
         document.getElementById('themeCardTitle').innerHTML = ICONS.theme + ' 主题色';
         document.getElementById('tokenCardTitle').innerHTML = ICONS.token + ' Token 消耗统计';
-
-        console.log('语匣已启动');
-        console.log('💡 数据保存在 localStorage 中，key=' + DB_KEY);
     </script>
 </body>
 </html>
