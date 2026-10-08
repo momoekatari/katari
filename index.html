@@ -294,6 +294,17 @@
             align-items: center;
             gap: 8px;
         }
+        .glass-icon-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.4);
+            -webkit-backdrop-filter: blur(14px) saturate(150%);
+            backdrop-filter: blur(14px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 8px 20px -10px rgba(36, 72, 100, 0.25);
+            -webkit-tap-highlight-color: transparent;
+        }
         .app-header .back {
             cursor: pointer;
             display: flex;
@@ -625,7 +636,7 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            background: rgba(230, 240, 245, 0.4);
+            background: transparent;
         }
         .chat-messages .msg {
             max-width: 85%;
@@ -1993,10 +2004,10 @@
                         </div>
                         <span class="title" id="chatCharName">对话</span>
                         <div class="chat-header-actions">
-                            <div id="chatSwitchSessionBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;" title="切换对话">
+                            <div id="chatSwitchSessionBtn" class="header-edit-btn glass-icon-btn" title="切换对话">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                             </div>
-                            <div id="chatEditBtn" class="header-edit-btn" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;background:rgba(255,255,255,0.4);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 8px 20px -10px rgba(36,72,100,0.25);-webkit-tap-highlight-color:transparent;">
+                            <div id="chatEditBtn" class="header-edit-btn glass-icon-btn">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </div>
                         </div>
