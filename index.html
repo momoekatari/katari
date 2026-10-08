@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v22 · AI 互动</title>
+    <title>语匣 v24 · AI 互动</title>
     <link rel="icon" type="image/png" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <link rel="apple-touch-icon" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <style>
@@ -1631,24 +1631,6 @@
             color: var(--ink-soft);
             opacity: 0.6;
         }
-        .todo-input-row {
-            border-top: 1px solid rgba(203, 224, 234, 0.5);
-            padding-top: 8px;
-        }
-        .todo-input-row input {
-            width: 100%;
-            border: none;
-            background: transparent;
-            padding: 4px 2px;
-            font-size: 12.5px;
-            color: var(--ink);
-            outline: none;
-            font-family: var(--font);
-        }
-        .todo-input-row input::placeholder {
-            color: var(--ink-soft);
-            opacity: 0.5;
-        }
 
         /* 弹窗内的待办列表样式 */
         #todoModalList {
@@ -2153,7 +2135,6 @@
                 albumWall: ['', '', ''],
                 todos: [],
                 visionBridgeApiId: '',
-                visionModel: '',
                 visionPrompt: '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。',
                 vinylLabel: '',
                 bubbleBlur: true,
@@ -3997,6 +3978,8 @@
                 const __limit = (typeof data.contextLimit === 'number') ? data.contextLimit : 10;
                 const recent = __limit > 0 ? __hist0.slice(-__limit) : __hist0.slice();
                 let __pending = [];
+                const chatApi = data.apis.find(a => a.id === (ch.apiId || data.currentApiId)) || data.apis[0];
+                const chatSupportsVision = isApiVision(chatApi);
                 function __flushPending() {
                     if (!__pending.length) return;
                     const hasVision = __pending.some(p => p.type === 'vision');
@@ -4020,11 +4003,15 @@
                 recent.forEach(m => {
                     if (m.role === 'system') return;
                     if (m.role === 'user') {
-                        if (m.imageData) {
+                        // 如果当前聊天模型不支持多模态，即使有 imageData，也只发文字描述
+                        if (m.imageData && chatSupportsVision) {
                             const textPart = (m.content && m.content !== '[图片]') ? m.content : '请描述这张图片。';
                             __pending.push({ type: 'vision', text: textPart, image: m.imageData });
                         } else {
-                            __pending.push({ type: 'text', text: m.content });
+                            // 纯文本模型：丢弃 imageData，只发 content（若 content 为 '[图片]' 则替换为提示文本）
+                            let textContent = m.content || '';
+                            if (textContent === '[图片]') textContent = '[用户发送了一张图片]';
+                            __pending.push({ type: 'text', text: textContent });
                         }
                     } else {
                         __flushPending();
