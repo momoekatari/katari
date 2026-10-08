@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>语匣 v27 · AI 互动</title>
+    <title>语匣 v28 · AI 互动</title>
     <link rel="icon" type="image/png" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <link rel="apple-touch-icon" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <style>
@@ -831,11 +831,11 @@
             justify-content: space-between;
             height: 48px;
             padding: 0 16px;
-            background: color-mix(in srgb, var(--accent-deep) 45%, transparent);
-            -webkit-backdrop-filter: blur(22px) saturate(180%);
-            backdrop-filter: blur(22px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            background: var(--accent);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            backdrop-filter: blur(14px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 4px 12px -6px rgba(0,0,0,0.15);
             border-radius: 18px;
             box-sizing: border-box;
             gap: 6px;
@@ -1504,7 +1504,7 @@
             -webkit-backdrop-filter: none;
         }
         body.no-bubble-blur .chat-messages .voice-bubble {
-            background: var(--accent-deep);
+            background: var(--accent);
             -webkit-backdrop-filter: none;
             backdrop-filter: none;
         }
@@ -1878,7 +1878,7 @@
         body.desktop-gray .calendar-card,
         body.desktop-gray .todo-card,
         body.desktop-gray .vinyl-deck {
-            background: #d4d4d4;
+            background: var(--bg);
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             border-color: rgba(0, 0, 0, 0.08);
@@ -2122,18 +2122,6 @@
                             <span>导出时包含 API Key（⚠️ 含密钥，别外传）</span>
                         </label>
                     </div>
-                    <!-- Token 消耗统计 -->
-                    <div class="card" style="margin-bottom:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div>
-                                <div id="tokenCardTitle" style="font-size:14px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:6px;">Token 消耗统计</div>
-                                <div class="text-muted" style="font-size:12px;margin-top:2px;">本机累计 · 仅作参考</div>
-                            </div>
-                            <button class="btn btn-sm btn-soft" id="tokenClearBtn">清零</button>
-                        </div>
-                        <div id="tokenTotalDisplay" style="font-size:26px;font-weight:600;color:var(--accent);margin-top:10px;letter-spacing:-0.3px;">0</div>
-                        <div id="tokenCacheDisplay" style="font-size:13px;color:var(--ink-soft);margin-top:6px;">缓存命中：—</div>
-                    </div>
                     <div id="visionCardSlot"></div>
                     <div id="apiList"></div>
                     <div class="empty-state" id="apiEmpty">
@@ -2171,6 +2159,9 @@
                         </div>
                         <span class="title" id="chatCharName">对话</span>
                         <div class="chat-header-actions">
+                            <div id="chatTokenBtn" class="header-edit-btn glass-icon-btn" title="本对话 Token">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                            </div>
                             <div id="chatSwitchSessionBtn" class="header-edit-btn glass-icon-btn" title="切换对话">
                                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                             </div>
@@ -2307,7 +2298,7 @@
                 wallpaper: '',
                 theme: 'ice',
                 userAvatar: '',
-                profile: { nickname: '', bio: '' },
+                profile: { nickname: '', bio: '', userIntro: '' },
                 profileBg: '',
                 albumPhoto: '',
                 albumWall: ['', '', ''],
@@ -2316,9 +2307,6 @@
                 visionPrompt: '请详细描述这张图片的内容，包括可见文字、人物、场景、物品。',
                 vinylLabel: '',
                 bubbleBlur: true,
-                totalTokens: 0,
-                totalCacheHitTokens: 0,
-                totalCacheMissTokens: 0,
                 contextLimit: 10,
                 maxTokens: 800,
                 chatWallpaperDim: 40,
@@ -2364,12 +2352,12 @@
                     const sid = generateId();
                     d.chats[sid] = oldArr;
                     delete d.chats[c.id];
-                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now() });
+                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now(), totalTokens: 0, totalCacheHitTokens: 0, totalCacheMissTokens: 0 });
                 } else {
                     // 角色没有任何旧记录，建一个空默认会话
                     const sid = generateId();
                     d.chats[sid] = [];
-                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now() });
+                    c.sessions.push({ id: sid, title: '默认对话', updatedAt: Date.now(), totalTokens: 0, totalCacheHitTokens: 0, totalCacheMissTokens: 0 });
                 }
             });
         }
@@ -3050,17 +3038,6 @@
             if (uaInput) uaInput.value = data.userAvatar || '';
             const uaPreview = document.getElementById('userAvatarPreview');
             if (uaPreview) uaPreview.style.backgroundImage = data.userAvatar ? `url("${data.userAvatar}")` : '';
-            const tokenDisp = document.getElementById('tokenTotalDisplay');
-            if (tokenDisp) tokenDisp.textContent = (data.totalTokens || 0).toLocaleString('zh-CN');
-            const cacheDisp = document.getElementById('tokenCacheDisplay');
-            if (cacheDisp) {
-                const hit = data.totalCacheHitTokens || 0;
-                const miss = data.totalCacheMissTokens || 0;
-                const total = hit + miss;
-                cacheDisp.textContent = total > 0
-                    ? '缓存命中：' + hit.toLocaleString('zh-CN') + ' / ' + total.toLocaleString('zh-CN') + '（' + Math.round(hit / total * 100) + '%）'
-                    : '缓存命中：—';
-            }
             const cl = document.getElementById('contextLimitInput');
             if (cl) cl.value = (data.contextLimit === 0 || data.contextLimit) ? data.contextLimit : 10;
             const mt = document.getElementById('maxTokensInput');
@@ -3100,7 +3077,7 @@
                 const opts = [
                     { v: 'glass', label: '毛玻璃' },
                     { v: 'white', label: '纯白' },
-                    { v: 'gray', label: '浅灰' },
+                    { v: 'gray', label: '跟随主题' },
                     { v: 'black', label: '纯黑' },
                     { v: 'custom', label: '自定义' }
                 ];
@@ -3807,14 +3784,20 @@
                       const msgs = data.chats[s.id] || [];
                       const last = msgs.length ? msgs[msgs.length - 1] : null;
                       const lastText = last ? String(last.content || '').slice(0, 24) : '空对话';
+                      const __t = s.totalTokens || 0;
                       return `
-                      <div class="card" style="display:flex;align-items:center;gap:10px;cursor:pointer;" data-session-id="${s.id}">
-                          <div style="flex:1;min-width:0;" data-action="enterSession">
+                      <div class="card" style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px 14px;" data-session-id="${s.id}">
+                          <div style="flex:1;min-width:0;margin-top:2px;" data-action="enterSession">
                               <div style="font-weight:600;">${escHtml(s.title || '未命名对话')}</div>
                               <div class="text-muted" style="font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(lastText)}</div>
                           </div>
-                          <button class="btn btn-sm btn-soft" data-action="renameSession" data-session-id="${s.id}">改名</button>
-                          <button class="btn btn-sm btn-danger" data-action="deleteSession" data-session-id="${s.id}">删除</button>
+                          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+                              <div style="display:flex;gap:6px;">
+                                  <button class="btn btn-sm btn-soft" data-action="renameSession" data-session-id="${s.id}">改名</button>
+                                  <button class="btn btn-sm btn-danger" data-action="deleteSession" data-session-id="${s.id}">删除</button>
+                              </div>
+                              <div style="font-size:11px;color:var(--ink-soft);opacity:0.75;white-space:nowrap;">本对话 Token: ${__t.toLocaleString('zh-CN')}</div>
+                          </div>
                       </div>`;
                   }).join('')
                 : `<div class="text-muted" style="text-align:center;padding:20px;">还没有对话</div>`;
@@ -3936,6 +3919,58 @@
                 e.preventDefault();
                 if (!currentCharId) return;
                 showSessionList(currentCharId);
+            });
+        }
+
+        function openTokenModal() {
+            const __sess = (data.characters.find(c => c.id === currentCharId)?.sessions || []).find(s => s.id === currentSessionId);
+            if (!__sess) {
+                alert('当前没有活跃对话');
+                return;
+            }
+            const t = __sess.totalTokens || 0;
+            const hit = __sess.totalCacheHitTokens || 0;
+            const miss = __sess.totalCacheMissTokens || 0;
+            const cacheTotal = hit + miss;
+            const cacheLine = cacheTotal > 0
+                ? hit.toLocaleString('zh-CN') + ' / ' + cacheTotal.toLocaleString('zh-CN') + '（' + Math.round(hit / cacheTotal * 100) + '%）'
+                : '—';
+
+            modalBox.innerHTML = `
+                <div class="modal-title">本对话 Token</div>
+                <div style="margin:14px 0 8px;">
+                    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">累计消耗</div>
+                    <div style="font-size:26px;font-weight:600;color:var(--accent);letter-spacing:-0.3px;">${t.toLocaleString('zh-CN')}</div>
+                </div>
+                <div style="margin:14px 0 20px;">
+                    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">缓存命中</div>
+                    <div style="font-size:15px;color:var(--ink);">${cacheLine}</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-soft" id="tokenModalClear">清零</button>
+                    <button class="btn btn-primary" id="tokenModalClose">关闭</button>
+                </div>
+            `;
+            modalMask.classList.add('open');
+
+            document.getElementById('tokenModalClose').addEventListener('click', () => modalMask.classList.remove('open'));
+            document.getElementById('tokenModalClear').addEventListener('click', () => {
+                if (!confirm('确定清零本对话的 Token 统计吗？')) return;
+                __sess.totalTokens = 0;
+                __sess.totalCacheHitTokens = 0;
+                __sess.totalCacheMissTokens = 0;
+                saveData();
+                modalMask.classList.remove('open');
+            });
+        }
+
+        const chatTokenBtn = document.getElementById('chatTokenBtn');
+        if (chatTokenBtn) {
+            chatTokenBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (!currentCharId) return;
+                openTokenModal();
             });
         }
 
@@ -4346,6 +4381,10 @@
                     systemPrompt += availableEmojis.map(e => e.name).join(' / ') + '\n';
                 }
                 systemPrompt += '\n【消息标记说明】\n用户消息前带 [语音] 前缀时，表示用户是用语音说的这段话。可以自然回应"听到你的语音"或"你说"，不必刻意强调。\n';
+                const __ui = (data.profile && data.profile.userIntro) ? String(data.profile.userIntro).trim() : '';
+                if (__ui) {
+                    systemPrompt += '\n【关于用户】\n' + __ui + '\n';
+                }
 
                 // 构建消息：连续 user 合并成一条（多模态图片走 vision 数组）
                 const messages = [];
@@ -4552,10 +4591,16 @@
                     usedTokens = Math.round(inTok + outTok);
                 }
                 streamMsg.tokens = usedTokens;
-                data.totalTokens = (data.totalTokens || 0) + usedTokens;
-                if (usageInfo) {
-                    data.totalCacheHitTokens = (data.totalCacheHitTokens || 0) + (usageInfo.prompt_cache_hit_tokens || 0);
-                    data.totalCacheMissTokens = (data.totalCacheMissTokens || 0) + (usageInfo.prompt_cache_miss_tokens || 0);
+                const __sess = (data.characters.find(c => c.id === currentCharId)?.sessions || []).find(s => s.id === currentSessionId);
+                if (__sess) {
+                    __sess.totalTokens = (__sess.totalTokens || 0) + usedTokens;
+                    if (usageInfo) {
+                        const __cached = usageInfo.prompt_cache_hit_tokens || 0;
+                        const __input = usageInfo.prompt_tokens || 0;
+                        __sess.totalCacheHitTokens = (__sess.totalCacheHitTokens || 0) + __cached;
+                        const __miss = __input - __cached;
+                        __sess.totalCacheMissTokens = (__sess.totalCacheMissTokens || 0) + (__miss > 0 ? __miss : 0);
+                    }
                 }
                 delete streamMsg.streaming;
                 saveData();
@@ -5065,6 +5110,11 @@
                     <label>简介</label>
                     <textarea id="pfBio" rows="3" placeholder="写一句喜欢的话…">${escHtml(p.bio || '')}</textarea>
                 </div>
+                <div class="form-group">
+                    <label>用户介绍（可选，会告诉 AI）</label>
+                    <textarea id="pfUserIntro" rows="3" placeholder="写给 AI 看的自我介绍，留空则不发送…">${escHtml((p.userIntro) || '')}</textarea>
+                    <div class="text-muted" style="font-size:12px;margin-top:4px;">这段文字会注入 system prompt，让 AI 更了解你。留空则完全不发送</div>
+                </div>
                 <div class="text-muted" style="font-size:12px;margin-bottom:4px;">头像沿用设置页的「个人头像」</div>
                 <div class="modal-actions">
                     <button class="btn btn-soft" id="pfClearBg">清除背景</button>
@@ -5098,6 +5148,7 @@
                 data.profile = {
                     nickname: document.getElementById('pfNickname').value.trim(),
                     bio: document.getElementById('pfBio').value.trim(),
+                    userIntro: document.getElementById('pfUserIntro').value.trim(),
                 };
                 data.profileBg = document.getElementById('pfBg').value.trim();
                 saveData();
@@ -5520,18 +5571,6 @@
             el.addEventListener('scroll', __onScrollPerf, { passive: true });
         });
 
-        const tokenClearBtn = document.getElementById('tokenClearBtn');
-        if (tokenClearBtn) {
-            tokenClearBtn.addEventListener('click', () => {
-                if (!confirm('确定清零 Token 累计统计吗？')) return;
-                data.totalTokens = 0;
-                data.totalCacheHitTokens = 0;
-                data.totalCacheMissTokens = 0;
-                saveData();
-                renderSettings();
-            });
-        }
-
         const clInput = document.getElementById('contextLimitInput');
         if (clInput) {
             clInput.addEventListener('change', () => {
@@ -5563,7 +5602,6 @@
         document.getElementById('importBtn').innerHTML = ICONS.import + ' 导入备份';
         document.getElementById('wallpaperClear').innerHTML = ICONS.clear + ' 清除';
         document.getElementById('themeCardTitle').innerHTML = ICONS.theme + ' 主题色';
-        document.getElementById('tokenCardTitle').innerHTML = ICONS.token + ' Token 消耗统计';
     </script>
 </body>
 </html>
