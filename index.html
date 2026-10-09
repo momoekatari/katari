@@ -2749,6 +2749,12 @@ body.modal-open .chat-messages .msg.assistant {
             } catch (_) { d = getDefaultData(); }
             // 迁移：老数据 data.chats[charId]（数组）→ data.chats[sessionId] + 角色 sessions
             migrateSessions(d);
+            // 清理未完成的流式标记（上次会话中途关闭）
+            Object.values(d.chats || {}).forEach(arr => {
+                if (Array.isArray(arr)) {
+                    arr.forEach(m => { if (m && m.streaming) delete m.streaming; });
+                }
+            });
             return d;
         }
 
@@ -2791,7 +2797,17 @@ body.modal-open .chat-messages .msg.assistant {
         }
 
         function saveData() {
-            localStorage.setItem(DB_KEY, JSON.stringify(data));
+            try {
+                localStorage.setItem(DB_KEY, JSON.stringify(data));
+                return true;
+            } catch (e) {
+                if (!saveData.__warned) {
+                    saveData.__warned = true;
+                    alert('存储空间不足，请清理部分图片或导出备份后重试。');
+                    setTimeout(() => { saveData.__warned = false; }, 10000);
+                }
+                return false;
+            }
         }
 
         // ============================================================
@@ -4446,9 +4462,19 @@ body.modal-open .chat-messages .msg.assistant {
                 : escHtml((c && c.name ? c.name.charAt(0) : 'AI'));
             const hasThink = (m) => !!(m.think && String(m.think).trim());
 
+            // 表情清单提到循环外预先算好（避免每条消息重算）
+            const __charEmojiIds = ch ? (ch.emojis || []) : [];
+            const __availableEmojis2 = [
+                ...new Map([
+                    ...data.emojis.filter(e => e.isGlobal),
+                    ...data.emojis.filter(e => __charEmojiIds.includes(e.id))
+                ].map(e => [e.id, e])).values()
+            ];
+
             const __total = msgs.length;
-            if (__renderCount > __total) __renderCount = __total;
-            const __start = Math.max(0, __total - __renderCount);
+            // 渲染窗口：不小于一个批次、不超过消息总数，起点不越界
+            const __visible = Math.min(Math.max(__renderCount, RENDER_BATCH), __total);
+            const __start = Math.max(0, __total - __visible);
             // 顶部「查看更早」按钮（仅在还有更早消息时显示）
             let __moreHtml = '';
             if (__start > 0) {
@@ -4536,13 +4562,6 @@ body.modal-open .chat-messages .msg.assistant {
                 }
 
                 // 普通消息：按换行拆成多段，每段先解析 [表情:名字] 再生成气泡
-                const charEmojiIds2 = ch ? (ch.emojis || []) : [];
-                const availableEmojis2 = [
-                    ...new Map([
-                        ...data.emojis.filter(e => e.isGlobal),
-                        ...data.emojis.filter(e => charEmojiIds2.includes(e.id))
-                    ].map(e => [e.id, e])).values()
-                ];
                 const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
                 if (!paras.length) {
                     // 防御：空内容也要有个占位气泡
@@ -4558,11 +4577,11 @@ body.modal-open .chat-messages .msg.assistant {
                             if (aseg.type === 'action') {
                                 allSegs.push({ type: 'action', text: aseg.text });
                             } else {
-                                parseEmojiSegments(aseg.text, availableEmojis2).forEach(s => allSegs.push(s));
+                                parseEmojiSegments(aseg.text, __availableEmojis2).forEach(s => allSegs.push(s));
                             }
                         });
                     } else {
-                        parseEmojiSegments(p, availableEmojis2).forEach(s => allSegs.push(s));
+                        parseEmojiSegments(p, __availableEmojis2).forEach(s => allSegs.push(s));
                     }
                 });
                 if (!allSegs.length) {
@@ -4743,7 +4762,9 @@ body.modal-open .chat-messages .msg.assistant {
                 el.addEventListener('contextmenu', (e) => { e.preventDefault(); showMenu(e); });
             });
 
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // 仅在用户接近底部时才自动滚动
+            const __nearBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 80;
+            if (__nearBottom) chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         // 思考抽屉：显示 / 关闭
@@ -4776,6 +4797,12 @@ body.modal-open .chat-messages .msg.assistant {
             const ch = data.characters.find(c => c.id === currentCharId);
             if (!ch) return;
 
+            // 表情清单提前算好（供 __finalizeCurrentPara 复用，必须在 try 外）
+            const charEmojiIds = ch.emojis || [];
+            const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
+            const globalEmojis = data.emojis.filter(e => e.isGlobal);
+            const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
+
             const __hist0 = getCurrentSessionMsgs();
             const __last0 = __hist0[__hist0.length - 1];
             if (!__last0 || __last0.role !== 'user') {
@@ -4802,6 +4829,13 @@ body.modal-open .chat-messages .msg.assistant {
             let thinkBuf = '';
             let thinkTag = null;
             let pendingTag = '';
+            // 打字机平滑队列
+            const __typeQueue = [];
+            let __typeTimer = null;
+            let __typeTargetEl = null;
+            // 逐段气泡：已定稿段落文本、已渲染的段落 DOM 节点、流式 anchor（生长气泡的宿主行）
+            const __streamParas = [];
+            let __streamAnchorEl = null;   // 生长气泡所在的 .msg-row（后续段落都插到它前面）
             const THINK_OPEN_RE = /<(think|thought|thinking)\b[^>]*>/i;
             // 从 content delta 分流出思考/正文增量（状态机，可跨 chunk）
             function feedBody(delta) {
@@ -4846,7 +4880,6 @@ body.modal-open .chat-messages .msg.assistant {
                 if (!streamEl) return;
                 let html = '';
                 if (thinkBuf && !streamed) {
-                    // 思考进行中、正文还没出：气泡内显示提示
                     html = `<span style="font-size:11.5px;opacity:0.6;display:inline-flex;align-items:center;gap:4px;">${ICONS.think} 思考中…</span>`;
                 } else if (streamed) {
                     html = `<span>${escHtml(streamed)}</span>`;
@@ -4854,8 +4887,62 @@ body.modal-open .chat-messages .msg.assistant {
                     html = `<span class="typing-dots"><i></i><i></i><i></i></span>`;
                 }
                 streamEl.innerHTML = html;
-                // 流式期间思考中：气泡显示提示，不操作头像
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // 打字机平滑消费：从队列按帧取字符
+            function __startTypewriter() {
+                if (__typeTimer) return;
+                __typeTimer = setInterval(() => {
+                    if (!streamEl) return;
+                    if (__typeQueue.length === 0) {
+                        // 队列空时如果整体流结束，就把定时器停掉
+                        if (!streamEl.dataset.__streaming) {
+                            clearInterval(__typeTimer);
+                            __typeTimer = null;
+                        }
+                        return;
+                    }
+                    // 每 30ms 取 1~3 个字符，避免太快或太慢
+                    const take = Math.min(3, __typeQueue.length);
+                    const chunk = __typeQueue.splice(0, take).join('');
+                    for (const __c of chunk) {
+                        if (__c === '\n' || __c === '\r') {
+                            if (streamed) {
+                                __finalizeCurrentPara(streamed);
+                                streamed = '';
+                            }
+                        } else {
+                            streamed += __c;
+                        }
+                    }
+                    updateStreamEl();
+                }, 30);
+            }
+
+            // 把当前生长段落定稿：走完整渲染，作为平级 msg-row 插到 anchor 之前
+            function __finalizeCurrentPara(text) {
+                if (!__streamAnchorEl || !text) return;
+                // 头像：复用 anchor 已有的头像 DOM（旁白行不带头像，与静态渲染一致）
+                const avatarHtml = __streamAnchorEl.querySelector('.msg-avatar')?.outerHTML || '';
+                const segs = [];
+                splitActionSegments(text).forEach(aseg => {
+                    if (aseg.type === 'action') segs.push({ type: 'action', text: aseg.text });
+                    else parseEmojiSegments(aseg.text, availableEmojis).forEach(s => segs.push(s));
+                });
+                let html = '';
+                segs.forEach((seg) => {
+                    if (seg.type === 'action') {
+                        html += `<div class="msg-row action-row"><div class="action-text">${escHtml(seg.text)}</div></div>`;
+                    } else if (seg.type === 'emoji') {
+                        html += `<div class="msg-row assistant">${avatarHtml}<div class="msg-bubble-wrap"><div class="msg assistant emoji-msg"><img src="${escHtml(seg.emoji.url)}" alt="${escHtml(seg.emoji.name)}" /></div></div></div>`;
+                    } else {
+                        html += `<div class="msg-row assistant">${avatarHtml}<div class="msg-bubble-wrap"><div class="msg assistant">${escHtml(seg.text)}</div></div></div>`;
+                    }
+                });
+                // 插到 anchor 之前（生长气泡所在行之前）
+                __streamAnchorEl.insertAdjacentHTML('beforebegin', html);
+                __streamParas.push(text);
             }
 
             try {
@@ -4863,11 +4950,6 @@ body.modal-open .chat-messages .msg.assistant {
                 let systemPrompt = '';
                 // 角色设定
                 if (ch.setting) systemPrompt += ch.setting + '\n';
-                // 可用表情清单
-                const charEmojiIds = ch.emojis || [];
-                const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
-                const globalEmojis = data.emojis.filter(e => e.isGlobal);
-                const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
                 // 世界书：按 injectTo 分流
                 const wbIds = ch.worldBooks || [];
                 const wbs = data.worldBooks.filter(w => wbIds.includes(w.id));
@@ -4959,6 +5041,8 @@ body.modal-open .chat-messages .msg.assistant {
                 thinkBuf = '';
                 thinkTag = null;
                 pendingTag = '';
+                __streamParas.length = 0;
+                __streamAnchorEl = streamEl ? streamEl.closest('.msg-row') : null;
 
                 // 调用 API（流式 SSE，候选地址兜底）
                 const chatCandidates = buildChatCandidates(api.url);
@@ -5037,10 +5121,14 @@ body.modal-open .chat-messages .msg.assistant {
                                 if (dc) {
                                     const { thinkInc, bodyInc } = feedBody(dc);
                                     if (thinkInc) thinkBuf += thinkInc;
-                                    if (bodyInc) streamed += bodyInc;
+                                    if (bodyInc) {
+                                        // 入队，由打字机定时器平滑消费
+                                        for (const ch of bodyInc) __typeQueue.push(ch);
+                                        __startTypewriter();
+                                    }
                                 }
                                 // 流式中如有正文开始流出，思考块自动收起（贴在上方）
-                                updateStreamEl();
+                                if (thinkBuf && !streamed) updateStreamEl();
                             } catch (_) { /* 不完整 JSON，等下一块 */ }
                         }
                     }
@@ -5051,6 +5139,35 @@ body.modal-open .chat-messages .msg.assistant {
                     }
                     // 正文里仍可能有残留的关闭标签，清掉
                     streamed = streamed.replace(/<\/?(think|thought|thinking)\b[^>]*>/gi, '').replace(/<\/?(?:reasoning|think_signature)\b[^>]*>/gi, '');
+                    // 标记流结束，让打字机消费完剩余队列后自动停止
+                    if (streamEl) streamEl.dataset.__streaming = '';
+                    if (__typeTimer) {
+                        // 等队列清空再清理 timer，最多 3 秒兜底
+                        await new Promise(resolve => {
+                            const start = Date.now();
+                            const check = setInterval(() => {
+                                if (__typeQueue.length === 0 || Date.now() - start > 3000) {
+                                    clearInterval(check);
+                                    clearInterval(__typeTimer);
+                                    __typeTimer = null;
+                                    resolve();
+                                }
+                            }, 50);
+                        });
+                    }
+                    // 最终把完整 streamed 写回气泡（防止中途有的字符没消费完）
+                    updateStreamEl();
+                    // 收尾：定稿最后一段
+                    if (streamed) { __finalizeCurrentPara(streamed); streamed = ''; }
+                    // 生长气泡如果已经空了（只剩打字点），整行删掉
+                    if (__streamAnchorEl) {
+                        const wrapMsg = __streamAnchorEl.querySelector('.msg.streaming');
+                        if (wrapMsg && (!streamed || streamed.trim() === '')) {
+                            __streamAnchorEl.remove();
+                            __streamAnchorEl = null;
+                            streamEl = null;
+                        }
+                    }
                 } else {
                     // 降级：非流式 JSON
                     const json = await resp.json();
@@ -5076,7 +5193,9 @@ body.modal-open .chat-messages .msg.assistant {
                 }
 
                 // 收尾落库：思考段存进消息（不回送给 API，省 token）
-                streamMsg.content = streamed || '（没有收到回复）';
+                const __allParas = [...__streamParas];
+                if (streamed) __allParas.push(streamed);
+                streamMsg.content = __allParas.join('\n') || '（没有收到回复）';
                 if (thinkBuf) streamMsg.think = thinkBuf.trim();
                 let usedTokens = 0;
                 if (usageInfo) {
@@ -5123,6 +5242,8 @@ body.modal-open .chat-messages .msg.assistant {
 
             } catch (e) {
                 // 清理未完成的流式气泡：有内容则保留，无内容则移除
+                if (__typeTimer) { clearInterval(__typeTimer); __typeTimer = null; }
+                __streamParas.length = 0; __streamAnchorEl = null;
                 if (streamMsg) {
                     if (streamed) {
                         streamMsg.content = streamed;
@@ -6036,9 +6157,12 @@ body.modal-open .chat-messages .msg.assistant {
 
         function escHtml(str) {
             if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         // ============================================================
