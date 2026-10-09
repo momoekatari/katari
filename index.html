@@ -2156,7 +2156,7 @@ body.modal-open .chat-messages .msg.assistant {
                         <div class="icon-circle">
                             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 10h.01M12 10h.01M16 10h.01" stroke-linecap="round"/></svg>
                         </div>
-                        <span class="label">微信</span>
+                        <span class="label">信息</span>
                     </div>
                     <!-- 世界书 -->
                     <div class="app-icon" data-page="worldbook">
@@ -2317,7 +2317,7 @@ body.modal-open .chat-messages .msg.assistant {
                         <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <span>返回</span>
                     </div>
-                    <span class="title" id="wechatTitle">微信</span>
+                    <span class="title" id="wechatTitle">信息</span>
                     <div class="right-action" id="addCharBtn">
                         <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
                     </div>
@@ -2473,6 +2473,15 @@ body.modal-open .chat-messages .msg.assistant {
                         <label>分组</label>
                         <select id="wbGroup"></select>
                     </div>
+                    <div class="form-group">
+                        <label>注入位置</label>
+                        <select id="wbInjectTo">
+                            <option value="system">system（系统提示，默认）</option>
+                            <option value="user">user（用户消息）</option>
+                            <option value="assistant">assistant（助手消息）</option>
+                        </select>
+                        <div class="text-muted" style="font-size:12px;margin-top:4px;">system 权重最高；user 会打破缓存前缀；assistant 可能让 AI 当成自己说过的话</div>
+                    </div>
                     <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px;">
                         <button class="btn btn-soft" id="wbEditCancel" style="flex:1;">取消</button>
                         <button class="btn btn-primary" id="wbEditSave" style="flex:1;">保存</button>
@@ -2582,7 +2591,7 @@ body.modal-open .chat-messages .msg.assistant {
                     <div class="form-group">
                         <label>绑定世界书</label>
                         <select id="charWb" multiple style="height:auto;min-height:60px;"></select>
-                        <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选</div>
+                        <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选。全局世界书自动对所有角色生效，无需勾选</div>
                     </div>
                     <div class="form-group">
                         <label>绑定表情包</label>
@@ -2621,7 +2630,12 @@ body.modal-open .chat-messages .msg.assistant {
                     </div>
                     <div class="form-group">
                         <label>API Key</label>
-                        <input id="apiEditKey" type="password" placeholder="sk-..." />
+                        <div style="position:relative;">
+                        <input id="apiEditKey" type="text" placeholder="sk-..." style="padding-right:42px;" />
+                        <button type="button" id="apiEditKeyEye" aria-label="显示/隐藏密钥" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:none;background:transparent;cursor:pointer;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;padding:0;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>模型</label>
@@ -3860,6 +3874,14 @@ body.modal-open .chat-messages .msg.assistant {
             nameEl.value = api?.name || '';
             urlEl.value = api?.url || '';
             keyEl.value = api?.key || '';
+            const eyeBtn = document.getElementById('apiEditKeyEye');
+            if (eyeBtn && !eyeBtn.dataset.__bound) {
+                eyeBtn.dataset.__bound = '1';
+                eyeBtn.addEventListener('click', () => {
+                    const k = document.getElementById('apiEditKey');
+                    k.type = k.type === 'password' ? 'text' : 'password';
+                });
+            }
             modelEl.value = api?.model || '';
             document.getElementById('apiEditSupportsVision').checked = !!api?.supportsVision;
             document.getElementById('apiEditStreamUsage').checked = api?.streamUsage !== false;
@@ -3867,13 +3889,15 @@ body.modal-open .chat-messages .msg.assistant {
 
             // URL 实时预览（只绑一次）
             const previewEl = document.getElementById('apiEditUrlPreview');
-            if (previewEl && !urlEl.dataset.__bound) {
-                urlEl.dataset.__bound = '1';
+            if (previewEl) {
                 const updatePreview = () => {
                     const v = (urlEl.value || '').trim();
                     previewEl.textContent = v ? (resolveChatUrl(v) || '—') : '—';
                 };
-                urlEl.addEventListener('input', updatePreview);
+                if (!urlEl.dataset.__bound) {
+                    urlEl.dataset.__bound = '1';
+                    urlEl.addEventListener('input', updatePreview);
+                }
                 updatePreview();
             }
 
@@ -3996,7 +4020,7 @@ body.modal-open .chat-messages .msg.assistant {
                 const pinTag = ch.pinnedAt ? `<span class="char-pin-tag">${ICONS.pin}</span>` : '';
                 return `
                     <div class="chat-list-item" data-char-id="${ch.id}">
-                        <div class="avatar">${ch.avatar ? `<img src="${escHtml(ch.avatar)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />` : escHtml(ch.name?.charAt(0) || '?')}</div>
+                        <div class="avatar">${ch.avatar ? `<img src="${escHtml(ch.avatar)}" alt="${escHtml(ch.name?.charAt(0) || '?')}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.parentNode.textContent=this.alt||'?'" />` : escHtml(ch.name?.charAt(0) || '?')}</div>
                         <div class="info">
                             <div class="name">${pinTag}${escHtml(ch.name || '未命名')}</div>
                             <div class="preview">${lastMsg ? escHtml(lastMsg) : '点击开始对话'}</div>
@@ -4106,7 +4130,7 @@ body.modal-open .chat-messages .msg.assistant {
 
             // 绑定世界书多选
             wbEl.innerHTML = data.worldBooks.length
-                ? data.worldBooks.map(w => `<option value="${w.id}" ${ch?.worldBooks?.includes(w.id) ? 'selected' : ''}>${escHtml(w.name)}</option>`).join('')
+                ? data.worldBooks.map(w => `<option value="${w.id}" ${ch?.worldBooks?.includes(w.id) ? 'selected' : ''}>${escHtml(w.name)}${w.isGlobal ? '（全局）' : ''}</option>`).join('')
                 : '<option value="">— 暂无世界书 —</option>';
 
             // 绑定表情多选
@@ -4418,7 +4442,7 @@ body.modal-open .chat-messages .msg.assistant {
             const ch = data.characters.find(c => c.id === charId);
             // 助手头像 HTML（URL 优先，否则首字符）
             const avatarHtml = (c) => c && c.avatar
-                ? `<img src="${escHtml(c.avatar)}" alt="" />`
+                ? `<img src="${escHtml(c.avatar)}" alt="${escHtml((c && c.name ? c.name.charAt(0) : 'AI'))}" onerror="this.parentNode.textContent=this.alt||'?'" />`
                 : escHtml((c && c.name ? c.name.charAt(0) : 'AI'));
             const hasThink = (m) => !!(m.think && String(m.think).trim());
 
@@ -4435,6 +4459,15 @@ body.modal-open .chat-messages .msg.assistant {
                 if (m.role === 'system') {
                     return `<div class="msg-row system"><div class="msg system">${escHtml(m.content)}</div></div>`;
                 }
+                // 兼容老数据：只有桥接前缀、没有 imageData 的历史消息
+                // 剥离前缀后当普通用户文本消息渲染（历史描述不折叠，避免用户还得手动点开）
+                if (m.role === 'user' && !m.imageData && /^\[用户发送了一张图片\]/.test(String(m.content || ''))) {
+                    const __descText = String(m.content).replace(/^\[用户发送了一张图片\]\n?/, '');
+                    const __avInner = data.userAvatar
+                        ? `<img src="${escHtml(data.userAvatar)}" alt="我" onerror="this.parentNode.textContent='我'" />`
+                        : '我';
+                    return `<div class="msg-row user" data-msg-idx="${idx}"><div class="msg-avatar">${__avInner}</div><div class="msg-bubble-wrap"><div class="msg user">${escHtml(__descText)}</div></div></div>`;
+                }
                 const isUser = m.role === 'user';
                 const cls = isUser ? 'user' : 'assistant';
                 // 同一人连续消息：上一条非 system 且 role 相同 → 间距紧凑
@@ -4444,7 +4477,7 @@ body.modal-open .chat-messages .msg.assistant {
 
                 // 头像：助手用角色头像，用户用固定头像
                 const avInner = isUser
-                    ? (data.userAvatar ? `<img src="${escHtml(data.userAvatar)}" alt="" />` : '我')
+                    ? (data.userAvatar ? `<img src="${escHtml(data.userAvatar)}" alt="我" onerror="this.parentNode.textContent='我'" />` : '我')
                     : avatarHtml(ch);
                 const avatarDiv = `<div class="msg-avatar">${avInner}</div>`;
                 // 助手有 think 时，气泡下方加提示小字
@@ -4458,7 +4491,9 @@ body.modal-open .chat-messages .msg.assistant {
                     const imgHtml = `<div class="msg ${cls} emoji-msg"><img src="${m.imageData}" alt="" style="max-width:160px;border-radius:12px;display:block;" /></div>`;
                     let inner = `<div class="msg-bubble-wrap">${imgHtml}`;
 
-                    if (m.isBridge) {
+                    // 兼容老数据：无 isBridge 标记时靠 content 前缀识别桥接消息
+                    const __bridgeLike = m.isBridge || /^\[用户发送了一张图片\]/.test(String(m.content || ''));
+                    if (__bridgeLike) {
                         const rawText = m.content || '';
                         const descText = rawText.replace(/^\[用户发送了一张图片\]\n?/, '');
                         inner += `<div class="msg-bridge-toggle" data-bridge-idx="${idx}">点击查看识图描述</div>`;
@@ -4630,16 +4665,36 @@ body.modal-open .chat-messages .msg.assistant {
                 });
             });
 
-            // 桥接识图描述：点击展开/收起
+            // 桥接识图描述：点击弹窗查看
             chatMessages.querySelectorAll('.msg-bridge-toggle').forEach(el => {
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const i = el.dataset.bridgeIdx;
-                    const descEl = chatMessages.querySelector('.msg-bridge-desc[data-bridge-idx="' + i + '"]');
-                    if (!descEl) return;
-                    const isOpen = descEl.style.display !== 'none';
-                    descEl.style.display = isOpen ? 'none' : 'block';
-                    el.textContent = isOpen ? '点击查看识图描述' : '点击收起描述';
+                    const i = parseInt(el.dataset.bridgeIdx, 10);
+                    const m = msgs[i];
+                    if (!m) return;
+                    const descText = String(m.content || '').replace(/^\[用户发送了一张图片\]\n?/, '');
+                    if (!descText) return;
+                    modalBox.innerHTML = `
+                        <div class="modal-title">识图描述</div>
+                        <div style="font-size:14px;line-height:1.7;color:var(--ink);white-space:pre-wrap;word-break:break-word;padding:4px 0 12px;">${escHtml(descText)}</div>
+                        <div class="modal-actions">
+                            <button class="btn btn-soft" id="bridgeDescCopy">复制</button>
+                            <button class="btn btn-primary" id="bridgeDescClose">关闭</button>
+                        </div>
+                    `;
+                    modalMask.classList.add('open');
+                    document.getElementById('bridgeDescClose').addEventListener('click', () => modalMask.classList.remove('open'));
+                    document.getElementById('bridgeDescCopy').addEventListener('click', () => {
+                        const btn = document.getElementById('bridgeDescCopy');
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(descText).then(() => {
+                                btn.textContent = '已复制';
+                                setTimeout(() => { btn.textContent = '复制'; }, 1200);
+                            }).catch(() => alert('复制失败，请长按文本手动选择'));
+                        } else {
+                            alert('当前环境不支持自动复制，请长按文本手动选择');
+                        }
+                    });
                 });
             });
 
@@ -4808,31 +4863,37 @@ body.modal-open .chat-messages .msg.assistant {
                 let systemPrompt = '';
                 // 角色设定
                 if (ch.setting) systemPrompt += ch.setting + '\n';
-                // 世界书
-                const wbIds = ch.worldBooks || [];
-                const wbs = data.worldBooks.filter(w => wbIds.includes(w.id));
                 // 可用表情清单
                 const charEmojiIds = ch.emojis || [];
                 const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
                 const globalEmojis = data.emojis.filter(e => e.isGlobal);
                 const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
-                const __emojiListStr = availableEmojis.length ? availableEmojis.map(e => e.name).join(' / ') : '（无）';
-                if (wbs.length) {
-                    systemPrompt += '\n【世界书规则】\n';
-                    wbs.forEach(w => {
-                        const __content = String(w.content || '').replace(/\{\{EMOJI_LIST\}\}/g, __emojiListStr);
-                        systemPrompt += `- ${w.name}: ${__content}\n`;
-                    });
-                }
-                // 全局世界书
+                // 世界书：按 injectTo 分流
+                const wbIds = ch.worldBooks || [];
+                const wbs = data.worldBooks.filter(w => wbIds.includes(w.id));
                 const globalWbs = data.worldBooks.filter(w => w.isGlobal);
-                if (globalWbs.length) {
-                    systemPrompt += '\n【全局规则】\n';
-                    globalWbs.forEach(w => {
-                        const __content = String(w.content || '').replace(/\{\{EMOJI_LIST\}\}/g, __emojiListStr);
-                        systemPrompt += `- ${w.name}: ${__content}\n`;
-                    });
+                const allWbs = [...new Map([...wbs, ...globalWbs].map(w => [w.id, w])).values()];
+
+                const __emojiListStr = availableEmojis.length ? availableEmojis.map(e => e.name).join(' / ') : '（无）';
+                const __resolveWbContent = (w) => String(w.content || '').replace(/\{\{EMOJI_LIST\}\}/g, __emojiListStr);
+
+                const __sysLines = [];
+                const __userLines = [];
+                const __assistantLines = [];
+
+                allWbs.forEach(w => {
+                    const __to = w.injectTo || 'system';
+                    const __line = `- ${w.name}: ${__resolveWbContent(w)}`;
+                    if (__to === 'user') __userLines.push(__line);
+                    else if (__to === 'assistant') __assistantLines.push(__line);
+                    else __sysLines.push(__line);
+                });
+
+                if (__sysLines.length) {
+                    systemPrompt += '\n【世界书规则】\n' + __sysLines.join('\n') + '\n';
                 }
+                const __wbUserBlock = __userLines.length ? '【世界书规则】\n' + __userLines.join('\n') : '';
+                const __wbAssistantBlock = __assistantLines.length ? '【世界书规则】\n' + __assistantLines.join('\n') : '';
                 const __ui = (data.profile && data.profile.userIntro) ? String(data.profile.userIntro).trim() : '';
                 if (__ui) {
                     systemPrompt += '\n【关于用户】\n' + __ui + '\n';
@@ -4841,6 +4902,8 @@ body.modal-open .chat-messages .msg.assistant {
                 // 构建消息：连续 user 合并成一条（多模态图片走 vision 数组）
                 const messages = [];
                 if (systemPrompt) messages.push({ role:'system', content: systemPrompt });
+                if (__wbUserBlock) messages.push({ role:'user', content: __wbUserBlock });
+                if (__wbAssistantBlock) messages.push({ role:'assistant', content: __wbAssistantBlock });
                 const __limit = (typeof data.contextLimit === 'number') ? data.contextLimit : 10;
                 const recent = __limit > 0 ? __hist0.slice(-__limit) : __hist0.slice();
                 let __pending = [];
@@ -5554,6 +5617,7 @@ body.modal-open .chat-messages .msg.assistant {
                             <div class="info">
                                 <div class="name">${escHtml(w.name)}</div>
                                 <div class="desc">${escHtml(w.content)}</div>
+                                <div style="font-size:11px;color:var(--ink-soft);opacity:0.65;margin-top:2px;">→ ${w.injectTo === 'user' ? 'user' : w.injectTo === 'assistant' ? 'assistant' : 'system'}</div>
                             </div>
                             <div class="toggle-wrap">
                                 <span style="display:inline-flex;align-items:center;">${w.isGlobal ? ICONS.globeOn : ICONS.globeOff}</span>
@@ -5687,6 +5751,9 @@ body.modal-open .chat-messages .msg.assistant {
             ).join('') + `<option value="__new__">+ 新建分组</option>`;
             if (!wb) groupEl.value = groups[0] || '默认';
 
+            const injectEl = document.getElementById('wbInjectTo');
+            if (injectEl) injectEl.value = wb?.injectTo || 'system';
+
             // 载入预设（只绑一次）
             const presetTexts = {
                 action: {
@@ -5769,6 +5836,7 @@ body.modal-open .chat-messages .msg.assistant {
                                 ...data.worldBooks[idx],
                                 name, content,
                                 group: finalGroup,
+                                injectTo: document.getElementById('wbInjectTo').value || 'system',
                                 updatedAt: Date.now(),
                             };
                         }
@@ -5777,6 +5845,7 @@ body.modal-open .chat-messages .msg.assistant {
                             id: generateId(),
                             name, content,
                             group: finalGroup,
+                            injectTo: document.getElementById('wbInjectTo').value || 'system',
                             isGlobal: false,
                             isActive: true,
                             createdAt: Date.now(),
@@ -5939,12 +6008,25 @@ body.modal-open .chat-messages .msg.assistant {
         function splitActionSegments(text) {
             const parts = [];
             const regex = /（([^（）]*)）/g;
+            // 括号内非汉字字符严格超过 50% → 疑似颜文字/符号，不拆为旁白
+            const isLikelyAction = (inner) => {
+                const s = String(inner).replace(/\s+/g, '');
+                if (!s) return false;
+                let cjk = 0;
+                for (const ch of s) {
+                    if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(ch)) cjk++;
+                }
+                const nonCjk = s.length - cjk;
+                return (nonCjk / s.length) <= 0.5;
+            };
             let last = 0, m;
             while ((m = regex.exec(text)) !== null) {
+                const inner = m[1].trim();
+                // 空括号 / 疑似颜文字：不更新 last，让整段留在原文里被下一段捕获
+                if (!inner || !isLikelyAction(inner)) continue;
                 const before = text.slice(last, m.index);
                 if (before) parts.push({ type: 'text', text: before });
-                const inner = m[1].trim();
-                if (inner) parts.push({ type: 'action', text: inner });
+                parts.push({ type: 'action', text: inner });
                 last = regex.lastIndex;
             }
             const rest = text.slice(last);
