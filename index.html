@@ -537,8 +537,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--line);
+            min-height: 60px;
         }
         .api-item:last-child {
             border-bottom: none;
@@ -559,8 +560,17 @@
         }
         .api-item .actions {
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            gap: 4px;
             flex-shrink: 0;
+            justify-content: center;
+        }
+        .api-item .actions .btn {
+            min-width: auto;
+            padding: 3px 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            border-radius: 6px;
         }
 
         .model-list {
@@ -1034,6 +1044,10 @@
             color: var(--ink-soft);
             margin-top: 2px;
             word-break: break-word;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            overflow: hidden;
         }
         .wb-item .toggle-wrap {
             display: flex;
@@ -1952,6 +1966,116 @@
         body.desktop-dark-text .profile-avatar {
             border-color: rgba(255, 255, 255, 0.2);
         }
+
+.chat-messages .msg-bridge-toggle {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 4px 0 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    opacity: 0.8;
+    user-select: none;
+}
+.chat-messages .msg-bridge-desc {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 6px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+/* 弹窗打开时禁用毛玻璃，防止 backdrop-filter 嵌套导致合成卡顿 */
+body.modal-open .profile-card,
+body.modal-open .album-card,
+body.modal-open .calendar-card,
+body.modal-open .todo-card,
+body.modal-open .vinyl-deck,
+body.modal-open .app-grid,
+body.modal-open .app-icon .icon-circle,
+body.modal-open .glass-icon-btn {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.modal-open .modal-mask {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(60, 55, 50, 0.42);
+}
+body.modal-open .chat-messages .msg.user,
+body.modal-open .chat-messages .voice-bubble {
+    background: var(--accent);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body.modal-open .chat-messages .msg.assistant {
+    background: var(--paper);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.chat-list-item .info .name .char-pin-tag {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    color: var(--accent);
+    margin-right: 4px;
+    transform: translateY(-1px);
+}
+.chat-list-item .info .name .char-pin-tag svg {
+    width: 13px;
+    height: 13px;
+}
+
+        /* 桌面图标网格：可容纳多个独立 App 图标，API 是第一个 */
+        .desktop-icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 20px 14px 0;
+            min-height: 200px;
+            align-content: start;
+        }
+        .desktop-icon-grid .app-icon {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .desktop-icon-grid .app-icon-ghost {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .desktop-bottom {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .todo-item {
+            position: relative;
+        }
+        .todo-item-del {
+            margin-left: auto;
+            border: none;
+            background: transparent;
+            color: var(--ink-soft);
+            opacity: 0.5;
+            font-size: 20px;
+            line-height: 1;
+            padding: 4px 8px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
+        }
+        .todo-item-del:active {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -1996,6 +2120,29 @@
                         <input type="file" id="albumFile" accept="*/*" style="display:none;" />
                     </div>
                 </div>
+                <div class="desktop-bottom">
+                <div class="desktop-icon-grid">
+                    <div class="app-icon" data-page="api" id="apiLauncher">
+                        <div class="icon-circle">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/></svg>
+                        </div>
+                    </div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon app-icon-ghost"></div>
+                </div>
                 <div class="app-grid">
                     <!-- 设置 -->
                     <div class="app-icon" data-page="settings">
@@ -2025,6 +2172,7 @@
                         </div>
                         <span class="label">表情包</span>
                     </div>
+                </div>
                 </div>
                 </div>
                 <div class="desktop-page">
@@ -2078,7 +2226,7 @@
                         <span>返回</span>
                     </div>
                     <span class="title">设置</span>
-                    <div class="right-action" id="addApiBtn">
+                    <div class="right-action" style="visibility:hidden;">
                         <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
                     </div>
                 </div>
@@ -2138,6 +2286,21 @@
                             <span>导出时包含 API Key（⚠️ 含密钥，别外传）</span>
                         </label>
                     </div>
+                </div>
+            </div>
+
+            <div class="app-page" id="page-api">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title">API</span>
+                    <div class="right-action" id="addApiBtn">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
                     <div id="visionCardSlot"></div>
                     <div id="apiList"></div>
                     <div class="empty-state" id="apiEmpty">
@@ -2213,6 +2376,110 @@
                 </div>
             </div>
 
+            <!-- ===== 待办页面 ===== -->
+            <div class="app-page" id="page-todo">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title">待办</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div id="todoPageList"></div>
+                    <div class="form-group" style="margin-top:16px; display:flex; gap:8px;">
+                        <input id="todoPageInput" placeholder="添加一条…" autocomplete="off" style="flex:1; min-width:0;" />
+                        <button class="btn btn-primary" id="todoPageAddBtn" style="flex-shrink:0;">添加</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 个人主页页面 ===== -->
+            <div class="app-page" id="page-profile">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title">个人主页</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div class="form-group">
+                        <label>背景图</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input id="pfBg" placeholder="图片 URL（留空=无背景）" style="flex:1;min-width:0;" />
+                            <button type="button" class="btn btn-sm btn-soft" id="pfBgPickBtn" style="display:inline-flex;align-items:center;justify-content:center;"></button>
+                            <input type="file" id="pfBgFile" accept="*/*" style="display:none;" />
+                        </div>
+                        <div class="text-muted" style="font-size:12px;margin-top:4px;">可填外链 URL，也可本地上传（自动压缩）</div>
+                    </div>
+                    <div class="form-group">
+                        <label>昵称</label>
+                        <input id="pfNickname" placeholder="你的名字" />
+                    </div>
+                    <div class="form-group">
+                        <label>简介</label>
+                        <textarea id="pfBio" rows="3" placeholder="写一句喜欢的话…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>用户介绍（可选，会告诉 AI）</label>
+                        <textarea id="pfUserIntro" rows="3" placeholder="写给 AI 看的自我介绍，留空则不发送…"></textarea>
+                        <div class="text-muted" style="font-size:12px;margin-top:4px;">这段文字会注入 system prompt，让 AI 更了解你。留空则完全不发送</div>
+                    </div>
+                    <div class="text-muted" style="font-size:12px;margin-bottom:12px;">头像沿用设置页的「个人头像」</div>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-soft" id="pfClearBg" style="flex:1;">清除背景</button>
+                        <button class="btn btn-primary" id="pfSaveBtn" style="flex:1;">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 世界书编辑页面 ===== -->
+            <div class="app-page" id="page-wb-edit">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title" id="wbEditTitle">世界书</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div class="form-group">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <button type="button" class="btn btn-sm btn-soft" data-preset="action" style="width:100%;">载入：动作描写</button>
+                            <button type="button" class="btn btn-sm btn-soft" data-preset="emoji" style="width:100%;">载入：表情说明</button>
+                            <button type="button" class="btn btn-sm btn-soft" data-preset="voice" style="width:100%;">载入：语音说明</button>
+                            <button type="button" class="btn btn-sm btn-soft" data-preset="image" style="width:100%;">载入：图片说明</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>名称</label>
+                        <input id="wbName" placeholder="世界书名称" />
+                    </div>
+                    <div class="form-group">
+                        <label>内容</label>
+                        <textarea id="wbContent" rows="4" placeholder="规则描述…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>分组</label>
+                        <select id="wbGroup"></select>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px;">
+                        <button class="btn btn-soft" id="wbEditCancel" style="flex:1;">取消</button>
+                        <button class="btn btn-primary" id="wbEditSave" style="flex:1;">保存</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- ===== 世界书页面 ===== -->
             <div class="app-page" id="page-worldbook">
                 <div class="app-header">
@@ -2247,10 +2514,133 @@
                     </div>
                 </div>
                 <div class="app-body" id="emojiBody">
+                    <div id="emojiEditCard" class="card" style="display:none;margin-bottom:12px;">
+                        <div id="emojiEditCardTitle" style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">添加表情</div>
+                        <div class="form-group">
+                            <label>名字（AI 引用时使用）</label>
+                            <input id="emojiName" placeholder="如：亲亲、委屈、哈哈" />
+                            <div class="text-muted" style="font-size:12px;margin-top:4px;">只支持中英文、数字、下划线，最长 20 字符</div>
+                        </div>
+                        <div class="form-group">
+                            <label>图片外链 URL</label>
+                            <input id="emojiUrl" placeholder="https://..." />
+                        </div>
+                        <div class="form-group">
+                            <label>分组</label>
+                            <select id="emojiGroup"></select>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn btn-soft" id="emojiEditCancel" style="flex:1;">取消</button>
+                            <button class="btn btn-primary" id="emojiEditAddBtn" style="flex:1;">添加</button>
+                        </div>
+                    </div>
                     <div id="emojiLibList"></div>
                     <div class="empty-state" id="emojiEmpty">
                         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-linecap="round"/><path d="M8 14s1.5 2 4 2 4-2 4-2" stroke-linecap="round"/></svg>
                         <p>还没有表情包<br />点击右上角 + 添加外链</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 角色编辑页面 ===== -->
+            <div class="app-page" id="page-char-edit">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title" id="charEditTitle">人设</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div class="form-group">
+                        <label>头像</label>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input id="charAvatar" placeholder="图片 URL（留空用首字符）" style="flex:1;min-width:0;" />
+                            <button type="button" class="btn btn-sm btn-soft" id="charAvatarPickBtn" style="display:inline-flex;align-items:center;gap:4px;"></button>
+                            <input type="file" id="charAvatarFile" accept="*/*" style="display:none;" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input id="charName" placeholder="角色名称" />
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input id="charNote" placeholder="备注信息" />
+                    </div>
+                    <div class="form-group">
+                        <label>角色设定</label>
+                        <textarea id="charSetting" rows="4" placeholder="角色背景、性格、说话风格…"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>绑定 API（留空则跟随全局）</label>
+                        <select id="charApi"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>绑定世界书</label>
+                        <select id="charWb" multiple style="height:auto;min-height:60px;"></select>
+                        <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选</div>
+                    </div>
+                    <div class="form-group">
+                        <label>绑定表情包</label>
+                        <select id="charEmoji" multiple style="height:auto;min-height:60px;"></select>
+                        <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选。全局表情自动对所有角色生效，无需勾选</div>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px;">
+                        <button class="btn btn-soft" id="charEditCancel" style="flex:1;">取消</button>
+                        <button class="btn btn-primary" id="charEditSave" style="flex:1;">保存</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== API 编辑页面 ===== -->
+            <div class="app-page" id="page-api-edit">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title" id="apiEditTitle">API</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div class="form-group">
+                        <label>名称</label>
+                        <input id="apiEditName" placeholder="如：OpenAI" />
+                    </div>
+                    <div class="form-group">
+                        <label>URL</label>
+                        <input id="apiEditUrl" placeholder="https://api.openai.com/v1" />
+                        <div class="text-muted" style="font-size:12px;margin-top:6px;">实际请求：<span id="apiEditUrlPreview" style="color:var(--accent);font-weight:500;">—</span></div>
+                        <div class="text-muted" style="font-size:11px;margin-top:2px;">末尾加 # 可禁用自动补全</div>
+                    </div>
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input id="apiEditKey" type="password" placeholder="sk-..." />
+                    </div>
+                    <div class="form-group">
+                        <label>模型</label>
+                        <input id="apiEditModelManual" placeholder="手动输入模型名（如 deepseek-chat）" style="margin-bottom:8px;" />
+                        <button class="btn btn-sm btn-soft" id="apiEditFetchModelsBtn" style="width:100%;">拉取模型</button>
+                        <div id="apiEditModelList" class="model-list mt-8"></div>
+                        <div class="text-muted" style="font-size:12px;margin-top:6px;">点击 chip 或手动输入均可，保存时以手输为准</div>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                        <input type="checkbox" id="apiEditSupportsVision" style="width:auto;" />
+                        <label for="apiEditSupportsVision" style="margin:0;cursor:pointer;">该模型支持多模态（可直接接收图片）</label>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+                        <input type="checkbox" id="apiEditStreamUsage" style="width:auto;" />
+                        <label for="apiEditStreamUsage" style="margin:0;cursor:pointer;">该 API 流式返回 usage（官方勾，中转站可不勾）</label>
+                    </div>
+                    <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px;">
+                        <button class="btn btn-soft" id="apiEditCancel" style="flex:1;">取消</button>
+                        <button class="btn btn-primary" id="apiEditSave" style="flex:1;">保存</button>
                     </div>
                 </div>
             </div>
@@ -2293,6 +2683,7 @@
             think: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6V2H8"/><path d="M15 11v2"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M20 16a2 2 0 0 1-2 2H8.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 4 20.286V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M9 11v2"/></svg>',
             token: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>',
             edit: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
+            pin: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',
         };
 
         const DB_KEY = 'healPhoneData';
@@ -2469,7 +2860,9 @@
         let currentApiId = null;
         let editingApiId = null;
         let editingCharId = null;
+        let charEditFrom = 'wechat';
         let editingWbId = null;
+        let editingEmojiId = null;
         let isResponding = false;
         const RENDER_BATCH = 30;
         let __renderCount = RENDER_BATCH;
@@ -2484,6 +2877,12 @@
         const pages = {
             settings: $('#page-settings'),
             wechat: $('#page-wechat'),
+            todo: $('#page-todo'),
+            profile: $('#page-profile'),
+            'wb-edit': $('#page-wb-edit'),
+            'char-edit': $('#page-char-edit'),
+            'api-edit': $('#page-api-edit'),
+            'api': $('#page-api'),
             worldbook: $('#page-worldbook'),
             emoji: $('#page-emoji'),
         };
@@ -2525,8 +2924,15 @@
                 currentPage = name;
                 if (name === 'settings') renderSettings();
                 if (name === 'wechat') renderChars();
+                if (name === 'todo') renderTodoPage();
+                if (name === 'profile') renderProfilePage();
+                if (name === 'wb-edit') renderWbEditPage();
+                if (name === 'char-edit') renderCharEditPage();
+                if (name === 'api-edit') renderApiEditPage();
+                if (name === 'api') renderApiPage();
                 if (name === 'worldbook') renderWorldBooks();
                 if (name === 'emoji') renderEmojiLib();
+                if (name === 'emoji') closeEmojiEditCard();
                 // 如果是从微信返回，关闭聊天视图
                 if (name !== 'wechat') {
                     chatView.style.display = 'none';
@@ -2543,6 +2949,7 @@
                 else if (page === 'wechat') showPage('wechat');
                 else if (page === 'worldbook') showPage('worldbook');
                 else if (page === 'emoji') showPage('emoji');
+                else if (page === 'api') showPage('api');
             });
         });
 
@@ -2552,6 +2959,24 @@
                 // 如果当前在聊天视图
                 if (chatView.style.display === 'flex') {
                     closeChat();
+                    return;
+                }
+                // 独立编辑页：按来源返回
+                if (currentPage === 'char-edit') {
+                    if (charEditFrom === 'chat' && currentCharId) {
+                        showPage('wechat');
+                        openChat(currentCharId);
+                    } else {
+                        showPage('wechat');
+                    }
+                    return;
+                }
+                if (currentPage === 'wb-edit') {
+                    showPage('worldbook');
+                    return;
+                }
+                if (currentPage === 'api-edit') {
+                    showPage('api');
                     return;
                 }
                 showPage('desktop');
@@ -2636,7 +3061,7 @@
             bio.textContent = p.bio || '点击写一段介绍';
 
             // 点击：打开编辑弹窗（含背景图上传）
-            card.onclick = () => openProfileModal();
+            card.onclick = () => showPage('profile');
         }
         renderProfile();
 
@@ -2806,40 +3231,28 @@
             // 点击卡片 → 打开弹窗
             const card = document.getElementById('todoCard');
             if (card) {
-                card.onclick = () => openTodoModal();
+                card.onclick = () => showPage('todo');
             }
         }
 
-        function openTodoModal() {
+        function renderTodoPage() {
             const todos = Array.isArray(data.todos) ? data.todos : [];
-            const listHtml = todos.length
+            const listEl = document.getElementById('todoPageList');
+            if (!listEl) return;
+
+            listEl.innerHTML = todos.length
                 ? todos.map(t => `
                     <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
                         <div class="todo-dot"></div>
                         <div class="todo-text">${escHtml(t.text)}</div>
+                        <button class="todo-item-del" data-del-id="${t.id}">×</button>
                     </div>
                 `).join('')
                 : '<div class="todo-empty">还没有待办，在下面加一条</div>';
 
-            modalBox.innerHTML = `
-                <div class="modal-title">待办</div>
-                <div id="todoModalList">${listHtml}</div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <input id="todoModalInput" placeholder="添加一条…" autocomplete="off" />
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">关闭</button>
-                </div>
-            `;
-            modalMask.classList.add('open');
-
-            const modalList = document.getElementById('todoModalList');
-            const modalInput = document.getElementById('todoModalInput');
-
-            // 绑定条目：点击切换完成，长按删除
-            modalList.querySelectorAll('.todo-item').forEach(el => {
+            // 列表项：点击切换完成，长按删除
+            listEl.querySelectorAll('.todo-item').forEach(el => {
                 const id = el.dataset.todoId;
-
                 el.addEventListener('click', () => {
                     if (el.dataset.__suppressClick === '1') {
                         el.dataset.__suppressClick = '';
@@ -2849,11 +3262,9 @@
                     if (!t) return;
                     t.done = !t.done;
                     saveData();
-                    // 刷新弹窗内列表 + 卡片预览
-                    refreshTodoModal();
+                    renderTodoPage();
                     renderTodos();
                 });
-
                 let __t;
                 el.addEventListener('touchstart', () => {
                     __t = setTimeout(() => {
@@ -2861,7 +3272,7 @@
                         if (confirm('删除这条待办？')) {
                             data.todos = data.todos.filter(x => x.id !== id);
                             saveData();
-                            refreshTodoModal();
+                            renderTodoPage();
                             renderTodos();
                         }
                     }, 700);
@@ -2874,83 +3285,59 @@
                     if (confirm('删除这条待办？')) {
                         data.todos = data.todos.filter(x => x.id !== id);
                         saveData();
-                        refreshTodoModal();
+                        renderTodoPage();
                         renderTodos();
                     }
                 });
             });
 
-            // 输入框回车添加
-            modalInput.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter') return;
-                e.preventDefault();
-                const text = modalInput.value.trim();
-                if (!text) return;
-                data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
-                saveData();
-                modalInput.value = '';
-                refreshTodoModal();
-                renderTodos();
-            });
-
-            // 自动聚焦输入框，方便直接打字
-            setTimeout(() => modalInput.focus(), 200);
-
-            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
-        }
-
-        function refreshTodoModal() {
-            const modalList = document.getElementById('todoModalList');
-            if (!modalList) return;
-            const todos = Array.isArray(data.todos) ? data.todos : [];
-            modalList.innerHTML = todos.length
-                ? todos.map(t => `
-                    <div class="todo-item ${t.done ? 'done' : ''}" data-todo-id="${t.id}">
-                        <div class="todo-dot"></div>
-                        <div class="todo-text">${escHtml(t.text)}</div>
-                    </div>
-                `).join('')
-                : '<div class="todo-empty">还没有待办，在下面加一条</div>';
-            // 重新绑定事件
-            modalList.querySelectorAll('.todo-item').forEach(el => {
-                const id = el.dataset.todoId;
-                el.addEventListener('click', () => {
-                    if (el.dataset.__suppressClick === '1') {
-                        el.dataset.__suppressClick = '';
-                        return;
-                    }
-                    const t = data.todos.find(x => x.id === id);
-                    if (!t) return;
-                    t.done = !t.done;
-                    saveData();
-                    refreshTodoModal();
-                    renderTodos();
-                });
-                let __t;
-                el.addEventListener('touchstart', () => {
-                    __t = setTimeout(() => {
-                        el.dataset.__suppressClick = '1';
-                        if (confirm('删除这条待办？')) {
-                            data.todos = data.todos.filter(x => x.id !== id);
-                            saveData();
-                            refreshTodoModal();
-                            renderTodos();
-                        }
-                    }, 700);
-                }, { passive: true });
-                el.addEventListener('touchend', () => clearTimeout(__t));
-                el.addEventListener('touchmove', () => clearTimeout(__t), { passive: true });
-                el.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    if ('ontouchstart' in window) return;
+            // 每条待办右侧删除按钮
+            listEl.querySelectorAll('.todo-item-del').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.delId;
                     if (confirm('删除这条待办？')) {
                         data.todos = data.todos.filter(x => x.id !== id);
                         saveData();
-                        refreshTodoModal();
+                        renderTodoPage();
                         renderTodos();
                     }
                 });
             });
+
+            // 输入框旁的「添加」按钮（只绑一次）
+            const addBtn = document.getElementById('todoPageAddBtn');
+            if (addBtn && !addBtn.dataset.__bound) {
+                addBtn.dataset.__bound = '1';
+                addBtn.addEventListener('click', () => {
+                    const input = document.getElementById('todoPageInput');
+                    const text = input.value.trim();
+                    if (!text) return;
+                    data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
+                    saveData();
+                    input.value = '';
+                    renderTodoPage();
+                    renderTodos();
+                    input.focus();
+                });
+            }
+
+            // 输入框回车添加（只绑一次，防止重复绑定）
+            const input = document.getElementById('todoPageInput');
+            if (input && !input.dataset.__bound) {
+                input.dataset.__bound = '1';
+                input.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const text = input.value.trim();
+                    if (!text) return;
+                    data.todos.push({ id: generateId(), text, done: false, createdAt: Date.now() });
+                    saveData();
+                    input.value = '';
+                    renderTodoPage();
+                    renderTodos();
+                });
+            }
         }
 
         renderTodos();
@@ -3161,7 +3548,9 @@
                     });
                 }
             })();
+        }
 
+        function renderApiPage() {
             const list = data.apis;
             if (list.length === 0) {
                 apiListEl.innerHTML = '';
@@ -3193,13 +3582,13 @@
                     const id = el.dataset.apiId;
                     data.currentApiId = id;
                     saveData();
-                    renderSettings();
+                    renderApiPage();
                 });
             });
             apiListEl.querySelectorAll('[data-action="editApi"]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.apiId;
-                    openApiModal(id);
+                    openApiEditPage(id);
                 });
             });
             apiListEl.querySelectorAll('[data-action="deleteApi"]').forEach(btn => {
@@ -3208,7 +3597,7 @@
                     if (confirm('确定删除此 API 配置吗？')) {
                         data.apis = data.apis.filter(a => a.id !== id);
                         saveData();
-                        renderSettings();
+                        renderApiPage();
                     }
                 });
             });
@@ -3244,7 +3633,7 @@
         }
 
         // 添加 API
-        $('#addApiBtn').addEventListener('click', () => openApiModal(null));
+        $('#addApiBtn').addEventListener('click', () => openApiEditPage(null));
 
         // 壁纸
         function applyWallpaper() {
@@ -3449,155 +3838,135 @@
             });
         }
 
-        function openApiModal(apiId) {
+        function openApiEditPage(apiId) {
+            editingApiId = apiId;
+            showPage('api-edit');
+        }
+
+        function renderApiEditPage() {
+            const apiId = editingApiId;
             const api = apiId ? data.apis.find(a => a.id === apiId) : null;
             const isEdit = !!api;
-            editingApiId = apiId;
 
-            modalBox.innerHTML = `
-                <div class="modal-title">${isEdit ? '编辑 API' : '添加 API'}</div>
-                <div class="form-group">
-                    <label>名称</label>
-                    <input id="apiName" value="${escHtml(api?.name || '')}" placeholder="如：OpenAI" />
-                </div>
-                <div class="form-group">
-                    <label>URL</label>
-                    <input id="apiUrl" value="${escHtml(api?.url || '')}" placeholder="https://api.openai.com/v1" />
-                    <div class="text-muted" style="font-size:12px;margin-top:6px;">实际请求：<span id="apiUrlPreview" style="color:var(--accent);font-weight:500;">—</span></div>
-                    <div class="text-muted" style="font-size:11px;margin-top:2px;">末尾加 # 可禁用自动补全</div>
-                </div>
-                <div class="form-group">
-                    <label>API Key</label>
-                    <input id="apiKey" type="password" value="${escHtml(api?.key || '')}" placeholder="sk-..." />
-                </div>
-                <div class="form-group">
-                    <label>模型</label>
-                    <input id="apiModelManual" value="${escHtml(api?.model || '')}" placeholder="手动输入模型名（如 deepseek-chat）" style="margin-bottom:8px;" />
-                    <button class="btn btn-sm btn-soft" id="fetchModelsBtn" style="width:100%;">拉取模型</button>
-                    <div id="modelList" class="model-list mt-8"></div>
-                    <div class="text-muted" style="font-size:12px;margin-top:6px;">点击 chip 或手动输入均可，保存时以手输为准</div>
-                </div>
-                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-                    <input type="checkbox" id="apiSupportsVision" ${api?.supportsVision ? 'checked' : ''} style="width:auto;" />
-                    <label for="apiSupportsVision" style="margin:0;cursor:pointer;">该模型支持多模态（可直接接收图片）</label>
-                </div>
-                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-                    <input type="checkbox" id="apiStreamUsage" ${api?.streamUsage !== false ? 'checked' : ''} style="width:auto;" />
-                    <label for="apiStreamUsage" style="margin:0;cursor:pointer;">该 API 流式返回 usage（官方勾，中转站可不勾）</label>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">取消</button>
-                    <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
-                </div>
-            `;
+            const titleEl = document.getElementById('apiEditTitle');
+            if (titleEl) titleEl.textContent = isEdit ? '编辑 API' : '添加 API';
 
-            modalMask.classList.add('open');
+            const nameEl = document.getElementById('apiEditName');
+            const urlEl = document.getElementById('apiEditUrl');
+            const keyEl = document.getElementById('apiEditKey');
+            const modelEl = document.getElementById('apiEditModelManual');
+            if (!nameEl || !urlEl || !keyEl || !modelEl) return;
 
-            // URL 实时预览
-            const urlInput = document.getElementById('apiUrl');
-            const urlPreview = document.getElementById('apiUrlPreview');
-            function updateUrlPreview() {
-                const v = (urlInput.value || '').trim();
-                if (!v) { urlPreview.textContent = '—'; return; }
-                urlPreview.textContent = resolveChatUrl(v) || '—';
+            nameEl.value = api?.name || '';
+            urlEl.value = api?.url || '';
+            keyEl.value = api?.key || '';
+            modelEl.value = api?.model || '';
+            document.getElementById('apiEditSupportsVision').checked = !!api?.supportsVision;
+            document.getElementById('apiEditStreamUsage').checked = api?.streamUsage !== false;
+            document.getElementById('apiEditModelList').innerHTML = '';
+
+            // URL 实时预览（只绑一次）
+            const previewEl = document.getElementById('apiEditUrlPreview');
+            if (previewEl && !urlEl.dataset.__bound) {
+                urlEl.dataset.__bound = '1';
+                const updatePreview = () => {
+                    const v = (urlEl.value || '').trim();
+                    previewEl.textContent = v ? (resolveChatUrl(v) || '—') : '—';
+                };
+                urlEl.addEventListener('input', updatePreview);
+                updatePreview();
             }
-            urlInput.addEventListener('input', updateUrlPreview);
-            updateUrlPreview();
 
-            // 拉取模型
-            const fetchBtn = document.getElementById('fetchModelsBtn');
-            const modelListDiv = document.getElementById('modelList');
+            // 拉取模型（只绑一次）
+            const fetchBtn = document.getElementById('apiEditFetchModelsBtn');
+            const modelListDiv = document.getElementById('apiEditModelList');
+            if (fetchBtn && !fetchBtn.dataset.__bound) {
+                fetchBtn.dataset.__bound = '1';
+                fetchBtn.addEventListener('click', async () => {
+                    const url = document.getElementById('apiEditUrl').value.trim();
+                    const key = document.getElementById('apiEditKey').value.trim();
+                    if (!url) { alert('请先填写 URL'); return; }
+                    if (!key) { alert('请先填写 API Key'); return; }
+                    fetchBtn.textContent = '拉取中…';
+                    fetchBtn.disabled = true;
+                    try {
+                        const candidates = buildModelsCandidates(url);
+                        let resp = null, lastErr = null;
+                        for (const u of candidates) {
+                            try {
+                                const r = await fetch(u, { headers: { 'Authorization': 'Bearer ' + key } });
+                                if (r.ok) { resp = r; break; }
+                                lastErr = new Error('HTTP ' + r.status + ' @ ' + u);
+                            } catch (err) { lastErr = err; }
+                        }
+                        if (!resp) throw (lastErr || new Error('拉取失败'));
+                        const json = await resp.json();
+                        const models = json.data || json.models || [];
+                        if (!models.length) throw new Error('未找到模型列表');
 
-            fetchBtn.addEventListener('click', async () => {
-                const url = document.getElementById('apiUrl').value.trim();
-                const key = document.getElementById('apiKey').value.trim();
-                if (!url) { alert('请先填写 URL'); return; }
-                if (!key) { alert('请先填写 API Key'); return; }
-                fetchBtn.textContent = '拉取中…';
-                fetchBtn.disabled = true;
-                try {
-                    const candidates = buildModelsCandidates(url);
-                    let resp = null, lastErr = null;
-                    for (const u of candidates) {
-                        try {
-                            const r = await fetch(u, { headers: { 'Authorization': 'Bearer ' + key } });
-                            if (r.ok) { resp = r; break; }
-                            lastErr = new Error('HTTP ' + r.status + ' @ ' + u);
-                        } catch (err) { lastErr = err; }
-                    }
-                    if (!resp) throw (lastErr || new Error('拉取失败'));
-                    const json = await resp.json();
-                    const models = json.data || json.models || [];
-                    if (!models.length) throw new Error('未找到模型列表');
-                    modelListDiv.innerHTML = models.map(m => `
-                        <div class="model-chip ${m.id === (api?.model || '') ? 'active' : ''}" data-model="${escHtml(m.id)}">${escHtml(m.id)}</div>
-                    `).join('');
-                    // 点击选择
-                    modelListDiv.querySelectorAll('.model-chip').forEach(el => {
-                        el.addEventListener('click', () => {
-                            modelListDiv.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
-                            el.classList.add('active');
-                            const mi = document.getElementById('apiModelManual');
-                            if (mi) mi.value = el.dataset.model;
+                        const curModel = (document.getElementById('apiEditModelManual').value || '').trim();
+                        modelListDiv.innerHTML = models.map(m => `
+                            <div class="model-chip ${m.id === curModel ? 'active' : ''}" data-model="${escHtml(m.id)}">${escHtml(m.id)}</div>
+                        `).join('');
+                        modelListDiv.querySelectorAll('.model-chip').forEach(el => {
+                            el.addEventListener('click', () => {
+                                modelListDiv.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
+                                el.classList.add('active');
+                                const mi = document.getElementById('apiEditModelManual');
+                                if (mi) mi.value = el.dataset.model;
+                            });
                         });
-                    });
-                    // 如果之前有选中的模型，高亮
-                    if (api?.model) {
-                        const chip = modelListDiv.querySelector(`[data-model="${api.model}"]`);
-                        if (chip) chip.classList.add('active');
+                    } catch (e) {
+                        alert('拉取失败：' + e.message);
                     }
-                } catch (e) {
-                    alert('拉取失败：' + e.message);
-                }
-                fetchBtn.textContent = '拉取';
-                fetchBtn.disabled = false;
-            });
+                    fetchBtn.textContent = '拉取';
+                    fetchBtn.disabled = false;
+                });
+            }
 
-            // 取消
-            document.getElementById('modalCancel').addEventListener('click', () => {
-                modalMask.classList.remove('open');
-            });
+            // 取消（只绑一次）
+            const cancelBtn = document.getElementById('apiEditCancel');
+            if (cancelBtn && !cancelBtn.dataset.__bound) {
+                cancelBtn.dataset.__bound = '1';
+                cancelBtn.addEventListener('click', () => showPage('api'));
+            }
 
-            // 保存
-            document.getElementById('modalSave').addEventListener('click', () => {
-                const name = document.getElementById('apiName').value.trim() || '未命名';
-                const url = document.getElementById('apiUrl').value.trim();
-                const key = document.getElementById('apiKey').value.trim();
-                const manualModel = (document.getElementById('apiModelManual').value || '').trim();
-                const activeChip = document.querySelector('.model-chip.active');
-                const model = manualModel || (activeChip ? activeChip.dataset.model : (api?.model || ''));
+            // 保存（只绑一次）
+            const saveBtn = document.getElementById('apiEditSave');
+            if (saveBtn && !saveBtn.dataset.__bound) {
+                saveBtn.dataset.__bound = '1';
+                saveBtn.addEventListener('click', () => {
+                    const name = document.getElementById('apiEditName').value.trim() || '未命名';
+                    const url = document.getElementById('apiEditUrl').value.trim();
+                    const key = document.getElementById('apiEditKey').value.trim();
+                    const manualModel = (document.getElementById('apiEditModelManual').value || '').trim();
+                    const activeChip = document.querySelector('#apiEditModelList .model-chip.active');
+                    const currentApiId = editingApiId;
+                    const curApi = currentApiId ? data.apis.find(a => a.id === currentApiId) : null;
+                    const model = manualModel || (activeChip ? activeChip.dataset.model : (curApi?.model || ''));
 
-                if (!url) { alert('请填写 URL'); return; }
-                if (!key) { alert('请填写 API Key'); return; }
+                    if (!url) { alert('请填写 URL'); return; }
+                    if (!key) { alert('请填写 API Key'); return; }
 
-                if (isEdit) {
-                    const idx = data.apis.findIndex(a => a.id === apiId);
-                    if (idx > -1) {
-                        data.apis[idx] = { ...data.apis[idx], name, url, key, model, supportsVision: document.getElementById('apiSupportsVision').checked, streamUsage: document.getElementById('apiStreamUsage').checked };
+                    const supportsVision = document.getElementById('apiEditSupportsVision').checked;
+                    const streamUsage = document.getElementById('apiEditStreamUsage').checked;
+
+                    if (currentApiId) {
+                        const idx = data.apis.findIndex(a => a.id === currentApiId);
+                        if (idx > -1) {
+                            data.apis[idx] = { ...data.apis[idx], name, url, key, model, supportsVision, streamUsage };
+                        }
+                    } else {
+                        data.apis.push({
+                            id: generateId(),
+                            name, url, key, model, supportsVision, streamUsage,
+                            createdAt: Date.now(),
+                        });
                     }
-                } else {
-                    data.apis.push({
-                        id: generateId(),
-                        name,
-                        url,
-                        key,
-                        model,
-                        supportsVision: document.getElementById('apiSupportsVision').checked,
-                        streamUsage: document.getElementById('apiStreamUsage').checked,
-                        createdAt: Date.now(),
-                    });
-                }
-                saveData();
-                modalMask.classList.remove('open');
-                renderSettings();
-            });
-
-            // 如果有模型，自动填入
-            if (api?.model) {
-                setTimeout(() => {
-                    const sel = document.getElementById('apiModel');
-                    if (sel) sel.value = api.model;
-                }, 50);
+                    saveData();
+                    renderSettings();
+                    showPage('api');
+                });
             }
         }
 
@@ -3612,13 +3981,24 @@
                 return;
             }
             charEmpty.style.display = 'none';
-            charListEl.innerHTML = list.map(ch => {
+
+            const sorted = [...list].sort((a, b) => {
+                const pa = a.pinnedAt || 0;
+                const pb = b.pinnedAt || 0;
+                if (pa && pb) return pb - pa;
+                if (pa) return -1;
+                if (pb) return 1;
+                return 0;
+            });
+
+            charListEl.innerHTML = sorted.map(ch => {
                 const lastMsg = getLastMessage(ch.id);
+                const pinTag = ch.pinnedAt ? `<span class="char-pin-tag">${ICONS.pin}</span>` : '';
                 return `
                     <div class="chat-list-item" data-char-id="${ch.id}">
                         <div class="avatar">${ch.avatar ? `<img src="${escHtml(ch.avatar)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />` : escHtml(ch.name?.charAt(0) || '?')}</div>
                         <div class="info">
-                            <div class="name">${escHtml(ch.name || '未命名')}</div>
+                            <div class="name">${pinTag}${escHtml(ch.name || '未命名')}</div>
                             <div class="preview">${lastMsg ? escHtml(lastMsg) : '点击开始对话'}</div>
                         </div>
                         <div class="time">${ch.updatedAt ? formatTime(ch.updatedAt) : ''}</div>
@@ -3627,9 +4007,52 @@
             }).join('');
 
             charListEl.querySelectorAll('.chat-list-item').forEach(el => {
+                const id = el.dataset.charId;
+
                 el.addEventListener('click', () => {
-                    const id = el.dataset.charId;
+                    if (el.dataset.__suppressClick === '1') {
+                        el.dataset.__suppressClick = '';
+                        return;
+                    }
                     openChat(id);
+                });
+
+                const showCharMenu = () => {
+                    const ch = data.characters.find(c => c.id === id);
+                    if (!ch) return;
+                    const isPinned = !!ch.pinnedAt;
+                    const menu = document.getElementById('longpressMenu');
+                    menu.innerHTML = `<div class="item" id="lpPin">${ICONS.pin} ${isPinned ? '取消置顶' : '置顶'}</div>`;
+                    const rect = el.getBoundingClientRect();
+                    menu.style.left = Math.min(rect.left, window.innerWidth - 140) + 'px';
+                    menu.style.top = Math.max(rect.top - 50, 10) + 'px';
+                    menu.classList.add('open');
+                    document.getElementById('lpPin').onclick = (e) => {
+                        e.stopPropagation();
+                        ch.pinnedAt = isPinned ? 0 : Date.now();
+                        saveData();
+                        renderChars();
+                        menu.classList.remove('open');
+                    };
+                    document.addEventListener('click', function closeMenu() {
+                        menu.classList.remove('open');
+                        document.removeEventListener('click', closeMenu);
+                    }, { once: true });
+                };
+
+                let __lpTimer;
+                el.addEventListener('touchstart', () => {
+                    __lpTimer = setTimeout(() => {
+                        el.dataset.__suppressClick = '1';
+                        showCharMenu();
+                    }, 600);
+                }, { passive: true });
+                el.addEventListener('touchend', () => clearTimeout(__lpTimer));
+                el.addEventListener('touchmove', () => clearTimeout(__lpTimer), { passive: true });
+                el.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if ('ontouchstart' in window) return;
+                    showCharMenu();
                 });
             });
         }
@@ -3645,142 +4068,141 @@
         }
 
         // 添加人设
-        $('#addCharBtn').addEventListener('click', () => openCharModal(null));
+        $('#addCharBtn').addEventListener('click', () => {
+            charEditFrom = 'wechat';
+            openCharEditPage(null);
+        });
 
-        function openCharModal(charId) {
+        function openCharEditPage(charId) {
+            editingCharId = charId;
+            showPage('char-edit');
+        }
+
+        function renderCharEditPage() {
+            const charId = editingCharId;
             const ch = charId ? data.characters.find(c => c.id === charId) : null;
             const isEdit = !!ch;
-            editingCharId = charId;
 
-            // 获取所有世界书
-            const wbOpts = data.worldBooks.map(w => `
-                <option value="${w.id}" ${ch?.worldBooks?.includes(w.id) ? 'selected' : ''}>${escHtml(w.name)}</option>
-            `).join('');
+            const titleEl = document.getElementById('charEditTitle');
+            if (titleEl) titleEl.textContent = isEdit ? '编辑人设' : '创建人设';
 
-            modalBox.innerHTML = `
-                <div class="modal-title">${isEdit ? '编辑人设' : '创建人设'}</div>
-                <div class="form-group">
-                    <label>头像</label>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <input id="charAvatar" value="${escHtml(ch?.avatar || '')}" placeholder="图片 URL（留空用首字符）" style="flex:1;min-width:0;" />
-                        <button type="button" class="btn btn-sm btn-soft" id="charAvatarPickBtn" style="display:inline-flex;align-items:center;gap:4px;">${ICONS.camera} 选图</button>
-                        <input type="file" id="charAvatarFile" accept="*/*" style="display:none;" />
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>姓名</label>
-                    <input id="charName" value="${escHtml(ch?.name || '')}" placeholder="角色名称" />
-                </div>
-                <div class="form-group">
-                    <label>备注</label>
-                    <input id="charNote" value="${escHtml(ch?.note || '')}" placeholder="备注信息" />
-                </div>
-                <div class="form-group">
-                    <label>角色设定</label>
-                    <textarea id="charSetting" rows="4" placeholder="角色背景、性格、说话风格…">${escHtml(ch?.setting || '')}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>绑定 API（留空则跟随全局）</label>
-                    <select id="charApi">
-                        <option value="">— 跟随全局 API —</option>
-                        ${data.apis.map(a => `<option value="${a.id}" ${ch?.apiId === a.id ? 'selected' : ''}>${escHtml(a.name || '未命名')} · ${escHtml(a.model || '未选')}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>绑定世界书</label>
-                    <select id="charWb" multiple style="height:auto;min-height:60px;">
-                        ${wbOpts || '<option value="">— 暂无世界书 —</option>'}
-                    </select>
-                    <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选</div>
-                </div>
-                <div class="form-group">
-                    <label>绑定表情包</label>
-                    <select id="charEmoji" multiple style="height:auto;min-height:60px;">
-                        ${data.emojis.map(e => `<option value="${e.id}" ${ch?.emojis?.includes(e.id) ? 'selected' : ''}>${escHtml(e.name)}${e.isGlobal ? '（全局）' : ''}</option>`).join('') || '<option value="">— 暂无表情 —</option>'}
-                    </select>
-                    <div class="text-muted" style="margin-top:4px;font-size:12px;">按住 Ctrl/Cmd 多选。全局表情自动对所有角色生效，无需勾选</div>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">取消</button>
-                    <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '创建'}</button>
-                </div>
-            `;
+            const avatarEl = document.getElementById('charAvatar');
+            const nameEl = document.getElementById('charName');
+            const noteEl = document.getElementById('charNote');
+            const settingEl = document.getElementById('charSetting');
+            const apiEl = document.getElementById('charApi');
+            const wbEl = document.getElementById('charWb');
+            const emojiEl = document.getElementById('charEmoji');
+            if (!avatarEl || !nameEl || !noteEl || !settingEl || !apiEl || !wbEl || !emojiEl) return;
 
-            modalMask.classList.add('open');
+            avatarEl.value = ch?.avatar || '';
+            nameEl.value = ch?.name || '';
+            noteEl.value = ch?.note || '';
+            settingEl.value = ch?.setting || '';
 
-            // 头像：从相册选图 → 转 dataURL 填进 charAvatar 输入框
-            const avatarPickBtn = document.getElementById('charAvatarPickBtn');
-            const avatarFileInput = document.getElementById('charAvatarFile');
-            if (avatarPickBtn && avatarFileInput) {
-                avatarPickBtn.addEventListener('click', () => {
-                    avatarFileInput.click();
-                });
-                avatarFileInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (!file.type.startsWith('image/')) { alert('请选择图片文件！'); avatarFileInput.value = ''; return; }
+            // 绑定 API 下拉
+            apiEl.innerHTML = '<option value="">— 跟随全局 API —</option>' +
+                data.apis.map(a => `<option value="${a.id}" ${ch?.apiId === a.id ? 'selected' : ''}>${escHtml(a.name || '未命名')} · ${escHtml(a.model || '未选')}</option>`).join('');
+
+            // 绑定世界书多选
+            wbEl.innerHTML = data.worldBooks.length
+                ? data.worldBooks.map(w => `<option value="${w.id}" ${ch?.worldBooks?.includes(w.id) ? 'selected' : ''}>${escHtml(w.name)}</option>`).join('')
+                : '<option value="">— 暂无世界书 —</option>';
+
+            // 绑定表情多选
+            emojiEl.innerHTML = data.emojis.length
+                ? data.emojis.map(e => `<option value="${e.id}" ${ch?.emojis?.includes(e.id) ? 'selected' : ''}>${escHtml(e.name)}${e.isGlobal ? '（全局）' : ''}</option>`).join('')
+                : '<option value="">— 暂无表情 —</option>';
+
+            // 头像选图（只绑一次）
+            const pickBtn = document.getElementById('charAvatarPickBtn');
+            const fileInput = document.getElementById('charAvatarFile');
+            if (pickBtn && !pickBtn.dataset.__bound) {
+                pickBtn.dataset.__bound = '1';
+                pickBtn.innerHTML = ICONS.camera + ' 选图';
+                pickBtn.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', async (e) => {
+                    const f = e.target.files[0];
+                    if (!f) return;
+                    if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); fileInput.value = ''; return; }
                     try {
-                        const compressed = await compressImage(file, 200, 200, 0.75);
-                        const input = document.getElementById('charAvatar');
-                        if (input) input.value = compressed;
+                        const compressed = await compressImage(f, 200, 200, 0.75);
+                        document.getElementById('charAvatar').value = compressed;
                     } catch (err) { alert('图片处理失败：' + err.message); }
-                    avatarFileInput.value = '';
+                    fileInput.value = '';
                 });
             }
 
-            document.getElementById('modalCancel').addEventListener('click', () => {
-                modalMask.classList.remove('open');
-            });
+            // 取消（只绑一次）
+            const cancelBtn = document.getElementById('charEditCancel');
+            if (cancelBtn && !cancelBtn.dataset.__bound) {
+                cancelBtn.dataset.__bound = '1';
+                cancelBtn.addEventListener('click', () => {
+                    if (charEditFrom === 'chat' && currentCharId) {
+                        showPage('wechat');
+                        openChat(currentCharId);
+                    } else {
+                        showPage('wechat');
+                    }
+                });
+            }
 
-            document.getElementById('modalSave').addEventListener('click', () => {
-                const name = document.getElementById('charName').value.trim() || '未命名';
-                const note = document.getElementById('charNote').value.trim();
-                const setting = document.getElementById('charSetting').value.trim();
-                const avatar = document.getElementById('charAvatar').value.trim();
-                const wbSelect = document.getElementById('charWb');
-                const wbIds = Array.from(wbSelect.selectedOptions).map(opt => opt.value).filter(v => v);
-                const emojiSelect = document.getElementById('charEmoji');
-                const emojiIds = emojiSelect ? Array.from(emojiSelect.selectedOptions).map(o => o.value).filter(v => v) : [];
-                const apiId = document.getElementById('charApi').value;
+            // 保存（只绑一次）
+            const saveBtn = document.getElementById('charEditSave');
+            if (saveBtn && !saveBtn.dataset.__bound) {
+                saveBtn.dataset.__bound = '1';
+                saveBtn.addEventListener('click', () => {
+                    const name = document.getElementById('charName').value.trim() || '未命名';
+                    const note = document.getElementById('charNote').value.trim();
+                    const setting = document.getElementById('charSetting').value.trim();
+                    const avatar = document.getElementById('charAvatar').value.trim();
+                    const wbSelect = document.getElementById('charWb');
+                    const wbIds = Array.from(wbSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+                    const emojiSelect = document.getElementById('charEmoji');
+                    const emojiIds = emojiSelect ? Array.from(emojiSelect.selectedOptions).map(o => o.value).filter(v => v) : [];
+                    const apiId = document.getElementById('charApi').value;
 
-                if (isEdit) {
-                    const idx = data.characters.findIndex(c => c.id === charId);
-                    if (idx > -1) {
-                        data.characters[idx] = {
-                            ...data.characters[idx],
-                            name,
-                            note,
-                            setting,
-                            avatar,
+                    const currentCharId2 = editingCharId;
+
+                    if (currentCharId2) {
+                        const idx = data.characters.findIndex(c => c.id === currentCharId2);
+                        if (idx > -1) {
+                            data.characters[idx] = {
+                                ...data.characters[idx],
+                                name, note, setting, avatar,
+                                worldBooks: wbIds,
+                                emojis: emojiIds,
+                                apiId,
+                                updatedAt: Date.now(),
+                            };
+                        }
+                    } else {
+                        data.characters.push({
+                            id: generateId(),
+                            name, note, setting, avatar,
                             worldBooks: wbIds,
                             emojis: emojiIds,
                             apiId,
+                            createdAt: Date.now(),
                             updatedAt: Date.now(),
-                        };
+                        });
+                        const newCh = data.characters[data.characters.length - 1];
+                        const sid = generateId();
+                        data.chats[sid] = [];
+                        newCh.sessions = [{ id: sid, title: '默认对话', updatedAt: Date.now() }];
                     }
-                } else {
-                    data.characters.push({
-                        id: generateId(),
-                        name,
-                        note,
-                        setting,
-                        avatar,
-                        worldBooks: wbIds,
-                        emojis: emojiIds,
-                        apiId,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                    // 初始化：建一个默认会话
-                    const newCh = data.characters[data.characters.length - 1];
-                    const sid = generateId();
-                    data.chats[sid] = [];
-                    newCh.sessions = [{ id: sid, title: '默认对话', updatedAt: Date.now() }];
-                }
-                saveData();
-                modalMask.classList.remove('open');
-                renderChars();
-            });
+                    saveData();
+
+                    if (charEditFrom === 'chat' && currentCharId) {
+                        renderChars();
+                        showPage('wechat');
+                        openChat(currentCharId);
+                    } else {
+                        renderChars();
+                        showPage('wechat');
+                    }
+                });
+            }
         }
 
         // ============================================================
@@ -3918,7 +4340,8 @@
                 e.stopPropagation();
                 e.preventDefault();
                 if (!currentCharId) return;
-                openCharModal(currentCharId);
+                charEditFrom = 'chat';
+                openCharEditPage(currentCharId);
             });
         }
 
@@ -4033,10 +4456,18 @@
                 // 用户图片消息：先渲染图片气泡
                 if (isUser && m.imageData) {
                     const imgHtml = `<div class="msg ${cls} emoji-msg"><img src="${m.imageData}" alt="" style="max-width:160px;border-radius:12px;display:block;" /></div>`;
-                    const textPart = m.content && m.content !== '[图片]' && !m.content.startsWith('[图片识别中') ? m.content : '';
                     let inner = `<div class="msg-bubble-wrap">${imgHtml}`;
-                    if (textPart) {
-                        inner += `<div class="msg ${cls}" style="margin-top:4px;">${escHtml(textPart)}</div>`;
+
+                    if (m.isBridge) {
+                        const rawText = m.content || '';
+                        const descText = rawText.replace(/^\[用户发送了一张图片\]\n?/, '');
+                        inner += `<div class="msg-bridge-toggle" data-bridge-idx="${idx}">点击查看识图描述</div>`;
+                        inner += `<div class="msg-bridge-desc" data-bridge-idx="${idx}" style="display:none;">${escHtml(descText)}</div>`;
+                    } else {
+                        const textPart = m.content && m.content !== '[图片]' && !m.content.startsWith('[图片识别中') ? m.content : '';
+                        if (textPart) {
+                            inner += `<div class="msg ${cls}" style="margin-top:4px;">${escHtml(textPart)}</div>`;
+                        }
                     }
                     inner += `</div>`;
                     return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}${inner}</div>`;
@@ -4196,6 +4627,19 @@
                         saveData();
                         renderMessages(currentCharId);
                     }
+                });
+            });
+
+            // 桥接识图描述：点击展开/收起
+            chatMessages.querySelectorAll('.msg-bridge-toggle').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const i = el.dataset.bridgeIdx;
+                    const descEl = chatMessages.querySelector('.msg-bridge-desc[data-bridge-idx="' + i + '"]');
+                    if (!descEl) return;
+                    const isOpen = descEl.style.display !== 'none';
+                    descEl.style.display = isOpen ? 'none' : 'block';
+                    el.textContent = isOpen ? '点击查看识图描述' : '点击收起描述';
                 });
             });
 
@@ -4367,10 +4811,17 @@
                 // 世界书
                 const wbIds = ch.worldBooks || [];
                 const wbs = data.worldBooks.filter(w => wbIds.includes(w.id));
+                // 可用表情清单
+                const charEmojiIds = ch.emojis || [];
+                const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
+                const globalEmojis = data.emojis.filter(e => e.isGlobal);
+                const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
+                const __emojiListStr = availableEmojis.length ? availableEmojis.map(e => e.name).join(' / ') : '（无）';
                 if (wbs.length) {
                     systemPrompt += '\n【世界书规则】\n';
                     wbs.forEach(w => {
-                        systemPrompt += `- ${w.name}: ${w.content}\n`;
+                        const __content = String(w.content || '').replace(/\{\{EMOJI_LIST\}\}/g, __emojiListStr);
+                        systemPrompt += `- ${w.name}: ${__content}\n`;
                     });
                 }
                 // 全局世界书
@@ -4378,19 +4829,10 @@
                 if (globalWbs.length) {
                     systemPrompt += '\n【全局规则】\n';
                     globalWbs.forEach(w => {
-                        systemPrompt += `- ${w.name}: ${w.content}\n`;
+                        const __content = String(w.content || '').replace(/\{\{EMOJI_LIST\}\}/g, __emojiListStr);
+                        systemPrompt += `- ${w.name}: ${__content}\n`;
                     });
                 }
-                // 可用表情清单
-                const charEmojiIds = ch.emojis || [];
-                const charEmojis = data.emojis.filter(e => charEmojiIds.includes(e.id));
-                const globalEmojis = data.emojis.filter(e => e.isGlobal);
-                const availableEmojis = [...new Map([...globalEmojis, ...charEmojis].map(e => [e.id, e])).values()];
-                if (availableEmojis.length) {
-                    systemPrompt += '\n【可用表情】\n如果想发表情，格式是 [表情:名字]。\n名字必须严格从下面清单里一字不差地选，选不出合适的就不发，用文字表达即可：\n';
-                    systemPrompt += availableEmojis.map(e => e.name).join(' / ') + '\n';
-                }
-                systemPrompt += '\n【消息标记说明】\n用户消息前带 [语音] 前缀时，表示用户是用语音说的这段话。可以自然回应"听到你的语音"或"你说"，不必刻意强调。\n';
                 const __ui = (data.profile && data.profile.userIntro) ? String(data.profile.userIntro).trim() : '';
                 if (__ui) {
                     systemPrompt += '\n【关于用户】\n' + __ui + '\n';
@@ -4699,7 +5141,6 @@
             `;
             modalMask.classList.add('open');
             const ta = document.getElementById('voiceInput');
-            setTimeout(() => ta.focus(), 200);
             document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
             document.getElementById('voiceSend').addEventListener('click', () => {
                 const text = ta.value.trim();
@@ -4774,7 +5215,8 @@
                                 role: 'user',
                                 content: '[用户发送了一张图片]\n' + desc,
                                 timestamp: Date.now(),
-                                imageData: compressed
+                                imageData: compressed,
+                                isBridge: true
                             };
                         }
                         saveData();
@@ -4934,7 +5376,7 @@
                 });
             });
             bodyEl.querySelectorAll('[data-action="editEmoji"]').forEach(el => {
-                el.addEventListener('click', () => openEmojiEditModal(el.dataset.emojiId));
+                el.addEventListener('click', () => openEmojiEditInline(el.dataset.emojiId));
             });
             bodyEl.querySelectorAll('[data-action="deleteEmoji"]').forEach(el => {
                 el.addEventListener('click', () => {
@@ -4952,77 +5394,137 @@
             });
         }
 
-        function openEmojiEditModal(emojiId) {
+        function openEmojiEditInline(emojiId) {
+            editingEmojiId = emojiId;
             const em = emojiId ? data.emojis.find(e => e.id === emojiId) : null;
             const isEdit = !!em;
+
+            const card = document.getElementById('emojiEditCard');
+            if (!card) return;
+
+            document.getElementById('emojiEditCardTitle').textContent = isEdit ? '编辑表情' : '添加表情';
+            document.getElementById('emojiName').value = em?.name || '';
+            document.getElementById('emojiUrl').value = em?.url || '';
+
             const groups = data.emojiGroups || ['默认'];
-            const groupOpts = groups.map(g => `<option value="${escHtml(g)}" ${em?.group === g ? 'selected' : ''}>${escHtml(g)}</option>`).join('');
-            modalBox.innerHTML = `
-                <div class="modal-title">${isEdit ? '编辑表情' : '添加表情'}</div>
-                <div class="form-group">
-                    <label>名字（AI 引用时使用）</label>
-                    <input id="emojiName" value="${escHtml(em?.name || '')}" placeholder="如：亲亲、委屈、哈哈" />
-                    <div class="text-muted" style="font-size:12px;margin-top:4px;">只支持中英文、数字、下划线，最长 20 字符</div>
-                </div>
-                <div class="form-group">
-                    <label>图片外链 URL</label>
-                    <input id="emojiUrl" value="${escHtml(em?.url || '')}" placeholder="https://..." />
-                </div>
-                <div class="form-group">
-                    <label>分组</label>
-                    <select id="emojiGroup">
-                        ${groupOpts}
-                        <option value="__new__">+ 新建分组</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">取消</button>
-                    <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
-                </div>
-            `;
-            modalMask.classList.add('open');
+            const groupEl = document.getElementById('emojiGroup');
+            groupEl.innerHTML = groups.map(g =>
+                `<option value="${escHtml(g)}" ${em?.group === g ? 'selected' : ''}>${escHtml(g)}</option>`
+            ).join('') + `<option value="__new__">+ 新建分组</option>`;
+            if (!em) groupEl.value = groups[0] || '默认';
 
+            const addBtn = document.getElementById('addEmojiBtn');
+            if (addBtn) {
+                addBtn.innerHTML = '<span style="font-size:14px;font-weight:600;color:var(--accent);">保存</span>';
+            }
 
-            const groupSelect = document.getElementById('emojiGroup');
-            groupSelect.addEventListener('change', () => {
-                if (groupSelect.value === '__new__') {
+            card.style.display = 'block';
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function bindEmojiEditForm() {
+            const card = document.getElementById('emojiEditCard');
+            if (!card || card.dataset.__bound) return;
+            card.dataset.__bound = '1';
+
+            // 分组新建
+            const groupEl = document.getElementById('emojiGroup');
+            groupEl.addEventListener('change', () => {
+                if (groupEl.value === '__new__') {
                     const g = prompt('输入新分组名称：');
                     if (g && g.trim()) {
                         const gg = g.trim();
-                        if (!data.emojiGroups.includes(gg)) { data.emojiGroups.push(gg); saveData(); }
-                        groupSelect.innerHTML = data.emojiGroups.map(x => `<option value="${escHtml(x)}" ${x === gg ? 'selected' : ''}>${escHtml(x)}</option>`).join('') + '<option value="__new__">+ 新建分组</option>';
-                        groupSelect.value = gg;
+                        if (!data.emojiGroups.includes(gg)) {
+                            data.emojiGroups.push(gg);
+                            saveData();
+                        }
+                        groupEl.innerHTML = data.emojiGroups.map(x =>
+                            `<option value="${escHtml(x)}" ${x === gg ? 'selected' : ''}>${escHtml(x)}</option>`
+                        ).join('') + `<option value="__new__">+ 新建分组</option>`;
+                        groupEl.value = gg;
                     } else {
-                        groupSelect.value = data.emojiGroups[0] || '默认';
+                        groupEl.value = data.emojiGroups[0] || '默认';
                     }
                 }
             });
 
-            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
-            document.getElementById('modalSave').addEventListener('click', () => {
-                const name = document.getElementById('emojiName').value.trim();
-                const url = document.getElementById('emojiUrl').value.trim();
-                const group = document.getElementById('emojiGroup').value;
-                if (!name) { alert('请填写名字'); return; }
-                if (!/^[\w\u4e00-\u9fa5]{1,20}$/.test(name)) { alert('名字只支持中英文、数字、下划线，最长 20 字符'); return; }
-                if (!url) { alert('请填写 URL'); return; }
-                if (!/^https?:\/\//.test(url)) { alert('URL 必须以 http:// 或 https:// 开头'); return; }
-                const finalGroup = group === '__new__' ? '默认' : group;
-                if (isEdit) {
-                    const idx = data.emojis.findIndex(x => x.id === emojiId);
-                    if (idx > -1) {
-                        data.emojis[idx] = { ...data.emojis[idx], name, url, group: finalGroup };
-                    }
-                } else {
-                    data.emojis.push({ id: generateId(), name, url, group: finalGroup, isGlobal: false, createdAt: Date.now() });
-                }
-                saveData();
-                modalMask.classList.remove('open');
-                renderEmojiLib();
+            // 取消
+            document.getElementById('emojiEditCancel').addEventListener('click', () => {
+                closeEmojiEditCard();
             });
+
+            // 底部「添加」按钮（连续添加）
+            const addBtn2 = document.getElementById('emojiEditAddBtn');
+            if (addBtn2 && !addBtn2.dataset.__bound) {
+                addBtn2.dataset.__bound = '1';
+                addBtn2.addEventListener('click', () => saveEmojiEdit(true));
+            }
         }
 
-        $('#addEmojiBtn').addEventListener('click', () => openEmojiEditModal(null));
+        function closeEmojiEditCard() {
+            const card = document.getElementById('emojiEditCard');
+            if (card) card.style.display = 'none';
+            editingEmojiId = null;
+            const addBtn = document.getElementById('addEmojiBtn');
+            if (addBtn) {
+                addBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>';
+            }
+        }
+
+        function saveEmojiEdit(keepOpen) {
+            const name = document.getElementById('emojiName').value.trim();
+            const url = document.getElementById('emojiUrl').value.trim();
+            const group = document.getElementById('emojiGroup').value;
+            // 新建状态下全空：视作用户放弃添加，直接关闭，不报错
+            const __isEmptyNew = !keepOpen
+                && !editingEmojiId
+                && !name
+                && !url;
+            if (__isEmptyNew) {
+                closeEmojiEditCard();
+                return;
+            }
+            if (!name) { alert('请填写名字'); return; }
+            if (!/^[\w\u4e00-\u9fa5]{1,20}$/.test(name)) { alert('名字只支持中英文、数字、下划线，最长 20 字符'); return; }
+            if (!url) { alert('请填写 URL'); return; }
+            if (!/^https?:\/\//.test(url)) { alert('URL 必须以 http:// 或 https:// 开头'); return; }
+
+            const finalGroup = group === '__new__' ? '默认' : group;
+            const currentEmojiId = editingEmojiId;
+
+            if (currentEmojiId) {
+                const idx = data.emojis.findIndex(x => x.id === currentEmojiId);
+                if (idx > -1) {
+                    data.emojis[idx] = { ...data.emojis[idx], name, url, group: finalGroup };
+                }
+            } else {
+                data.emojis.push({ id: generateId(), name, url, group: finalGroup, isGlobal: false, createdAt: Date.now() });
+            }
+            saveData();
+            renderEmojiLib();
+
+            if (keepOpen) {
+                // 连续添加模式：保存后切回新建状态，清空表单，保持展开
+                editingEmojiId = null;
+                const titleEl = document.getElementById('emojiEditCardTitle');
+                if (titleEl) titleEl.textContent = '添加表情';
+                document.getElementById('emojiName').value = '';
+                document.getElementById('emojiUrl').value = '';
+                document.getElementById('emojiGroup').value = (data.emojiGroups || ['默认'])[0] || '默认';
+                document.getElementById('emojiName').focus();
+            } else {
+                closeEmojiEditCard();
+            }
+        }
+
+        $('#addEmojiBtn').addEventListener('click', () => {
+            const card = document.getElementById('emojiEditCard');
+            if (card && card.style.display !== 'none') {
+                saveEmojiEdit(false);
+            } else {
+                openEmojiEditInline(null);
+            }
+        });
 
         // ============================================================
         //  世界书
@@ -5082,7 +5584,7 @@
             wbListEl.querySelectorAll('[data-action="editWb"]').forEach(el => {
                 el.addEventListener('click', () => {
                     const id = el.dataset.wbId;
-                    openWbModal(id);
+                    openWbEditPage(id);
                 });
             });
             wbListEl.querySelectorAll('[data-action="deleteWb"]').forEach(el => {
@@ -5097,195 +5599,194 @@
             });
         }
 
-        $('#addWbBtn').addEventListener('click', () => openWbModal(null));
+        $('#addWbBtn').addEventListener('click', () => openWbEditPage(null));
 
-        function openProfileModal() {
+        function renderProfilePage() {
             const p = data.profile || {};
-            modalBox.innerHTML = `
-                <div class="modal-title">编辑个人主页</div>
-                <div class="form-group">
-                    <label>背景图</label>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <input id="pfBg" value="${escHtml(data.profileBg || '')}" placeholder="图片 URL（留空=无背景）" style="flex:1;min-width:0;" />
-                        <button type="button" class="btn btn-sm btn-soft" id="pfBgPickBtn" style="display:inline-flex;align-items:center;justify-content:center;">${ICONS.camera}</button>
-                        <input type="file" id="pfBgFile" accept="*/*" style="display:none;" />
-                    </div>
-                    <div class="text-muted" style="font-size:12px;margin-top:4px;">可填外链 URL，也可本地上传（自动压缩）</div>
-                </div>
-                <div class="form-group">
-                    <label>昵称</label>
-                    <input id="pfNickname" value="${escHtml(p.nickname || '')}" placeholder="你的名字" />
-                </div>
-                <div class="form-group">
-                    <label>简介</label>
-                    <textarea id="pfBio" rows="3" placeholder="写一句喜欢的话…">${escHtml(p.bio || '')}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>用户介绍（可选，会告诉 AI）</label>
-                    <textarea id="pfUserIntro" rows="3" placeholder="写给 AI 看的自我介绍，留空则不发送…">${escHtml((p.userIntro) || '')}</textarea>
-                    <div class="text-muted" style="font-size:12px;margin-top:4px;">这段文字会注入 system prompt，让 AI 更了解你。留空则完全不发送</div>
-                </div>
-                <div class="text-muted" style="font-size:12px;margin-bottom:4px;">头像沿用设置页的「个人头像」</div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="pfClearBg">清除背景</button>
-                    <button class="btn btn-soft" id="modalCancel">取消</button>
-                    <button class="btn btn-primary" id="modalSave">保存</button>
-                </div>
-            `;
-            modalMask.classList.add('open');
+            const bg = document.getElementById('pfBg');
+            const nick = document.getElementById('pfNickname');
+            const bio = document.getElementById('pfBio');
+            const intro = document.getElementById('pfUserIntro');
+            if (!bg || !nick || !bio || !intro) return;
 
-            // 背景图选图
+            bg.value = data.profileBg || '';
+            nick.value = p.nickname || '';
+            bio.value = p.bio || '';
+            intro.value = p.userIntro || '';
+
+            // 背景图选图（只绑一次）
             const pfBgFile = document.getElementById('pfBgFile');
-            document.getElementById('pfBgPickBtn').addEventListener('click', () => pfBgFile.click());
-            pfBgFile.addEventListener('change', async (e) => {
-                const f = e.target.files[0];
-                if (!f) return;
-                if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); pfBgFile.value = ''; return; }
-                try {
-                    const compressed = await compressImage(f, 800, 800, 0.75);
-                    document.getElementById('pfBg').value = compressed;
-                } catch (err) { alert('图片处理失败：' + err.message); }
-                pfBgFile.value = '';
-            });
-
-            // 清除背景
-            document.getElementById('pfClearBg').addEventListener('click', () => {
-                document.getElementById('pfBg').value = '';
-            });
-
-            document.getElementById('modalCancel').addEventListener('click', () => modalMask.classList.remove('open'));
-            document.getElementById('modalSave').addEventListener('click', () => {
-                data.profile = {
-                    nickname: document.getElementById('pfNickname').value.trim(),
-                    bio: document.getElementById('pfBio').value.trim(),
-                    userIntro: document.getElementById('pfUserIntro').value.trim(),
-                };
-                data.profileBg = document.getElementById('pfBg').value.trim();
-                saveData();
-                modalMask.classList.remove('open');
-                renderProfile();
-            });
-        }
-
-        function openWbModal(wbId) {
-            const wb = wbId ? data.worldBooks.find(w => w.id === wbId) : null;
-            const isEdit = !!wb;
-            editingWbId = wbId;
-
-            const groups = data.wbGroups || ['默认'];
-            const groupOpts = groups.map(g => `
-                <option value="${escHtml(g)}" ${wb?.group === g ? 'selected' : ''}>${escHtml(g)}</option>
-            `).join('');
-
-            modalBox.innerHTML = `
-                <div class="modal-title">${isEdit ? '编辑世界书' : '添加世界书'}</div>
-                <div class="form-group">
-                    <button type="button" class="btn btn-sm btn-soft" id="wbLoadPreset" style="width:100%;">载入预设：动作描写</button>
-                </div>
-                <div class="form-group">
-                    <label>名称</label>
-                    <input id="wbName" value="${escHtml(wb?.name || '')}" placeholder="世界书名称" />
-                </div>
-                <div class="form-group">
-                    <label>内容</label>
-                    <textarea id="wbContent" rows="4" placeholder="规则描述…">${escHtml(wb?.content || '')}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>分组</label>
-                    <select id="wbGroup">
-                        ${groupOpts}
-                        <option value="__new__">+ 新建分组</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-soft" id="modalCancel">取消</button>
-                    <button class="btn btn-primary" id="modalSave">${isEdit ? '保存' : '添加'}</button>
-                </div>
-            `;
-
-            modalMask.classList.add('open');
-
-
-            const presetBtn = document.getElementById('wbLoadPreset');
-            if (presetBtn) {
-                presetBtn.addEventListener('click', () => {
-                    document.getElementById('wbName').value = '动作描写';
-                    document.getElementById('wbContent').value =
-                        '在回复中，可以用全角括号（）描写角色的动作、神态或心理活动。\n' +
-                        '括号内容会以旁白形式独立显示，不占用对话气泡。\n' +
-                        '\n' +
-                        '示例：\n' +
-                        '（轻轻笑了笑）你好呀，今天过得怎么样？\n' +
-                        '（歪头看着你）在发呆吗？\n' +
-                        '\n' +
-                        '规则：\n' +
-                        '- 只用全角括号（），不要用半角 ()\n' +
-                        '- 括号内容一句话以内，简洁为上\n' +
-                        '- 可以在说话前或说话后描写，但不要每句都加\n' +
-                        '- 动作描写要与情境和角色性格相符';
+            const pfBgPickBtn = document.getElementById('pfBgPickBtn');
+            if (pfBgPickBtn && !pfBgPickBtn.dataset.__bound) {
+                pfBgPickBtn.dataset.__bound = '1';
+                pfBgPickBtn.innerHTML = ICONS.camera;
+                pfBgPickBtn.addEventListener('click', () => pfBgFile.click());
+                pfBgFile.addEventListener('change', async (e) => {
+                    const f = e.target.files[0];
+                    if (!f) return;
+                    if (!f.type.startsWith('image/')) { alert('请选择图片文件！'); pfBgFile.value = ''; return; }
+                    try {
+                        const compressed = await compressImage(f, 800, 800, 0.75);
+                        document.getElementById('pfBg').value = compressed;
+                    } catch (err) { alert('图片处理失败：' + err.message); }
+                    pfBgFile.value = '';
                 });
             }
 
-            // 分组新建
-            const groupSelect = document.getElementById('wbGroup');
-            groupSelect.addEventListener('change', () => {
-                if (groupSelect.value === '__new__') {
-                    const newGroup = prompt('输入新分组名称：');
-                    if (newGroup && newGroup.trim()) {
-                        const g = newGroup.trim();
-                        if (!data.wbGroups.includes(g)) {
-                            data.wbGroups.push(g);
-                            saveData();
+            // 清除背景（只绑一次）
+            const clearBtn = document.getElementById('pfClearBg');
+            if (clearBtn && !clearBtn.dataset.__bound) {
+                clearBtn.dataset.__bound = '1';
+                clearBtn.addEventListener('click', () => {
+                    document.getElementById('pfBg').value = '';
+                });
+            }
+
+            // 保存（只绑一次）
+            const saveBtn = document.getElementById('pfSaveBtn');
+            if (saveBtn && !saveBtn.dataset.__bound) {
+                saveBtn.dataset.__bound = '1';
+                saveBtn.addEventListener('click', () => {
+                    data.profile = {
+                        nickname: document.getElementById('pfNickname').value.trim(),
+                        bio: document.getElementById('pfBio').value.trim(),
+                        userIntro: document.getElementById('pfUserIntro').value.trim(),
+                    };
+                    data.profileBg = document.getElementById('pfBg').value.trim();
+                    saveData();
+                    renderProfile();
+                    showPage('desktop');
+                });
+            }
+        }
+
+        function openWbEditPage(wbId) {
+            editingWbId = wbId;
+            showPage('wb-edit');
+        }
+
+        function renderWbEditPage() {
+            const wbId = editingWbId;
+            const wb = wbId ? data.worldBooks.find(w => w.id === wbId) : null;
+            const isEdit = !!wb;
+
+            const titleEl = document.getElementById('wbEditTitle');
+            if (titleEl) titleEl.textContent = isEdit ? '编辑世界书' : '添加世界书';
+
+            const nameEl = document.getElementById('wbName');
+            const contentEl = document.getElementById('wbContent');
+            const groupEl = document.getElementById('wbGroup');
+            if (!nameEl || !contentEl || !groupEl) return;
+
+            nameEl.value = wb?.name || '';
+            contentEl.value = wb?.content || '';
+
+            const groups = data.wbGroups || ['默认'];
+            groupEl.innerHTML = groups.map(g =>
+                `<option value="${escHtml(g)}" ${wb?.group === g ? 'selected' : ''}>${escHtml(g)}</option>`
+            ).join('') + `<option value="__new__">+ 新建分组</option>`;
+            if (!wb) groupEl.value = groups[0] || '默认';
+
+            // 载入预设（只绑一次）
+            const presetTexts = {
+                action: {
+                    name: '动作描写',
+                    content: '在回复中，可以用全角括号（）描写角色的动作、神态或心理活动。\n括号内容会以旁白形式独立显示，不占用对话气泡。\n\n示例：\n（轻轻笑了笑）你好呀，今天过得怎么样？\n（歪头看着你）在发呆吗？\n\n规则：\n- 只用全角括号（），不要用半角 ()\n- 括号内容一句话以内，简洁为上\n- 可以在说话前或说话后描写，但不要每句都加\n- 动作描写要与情境和角色性格相符',
+                },
+                emoji: {
+                    name: '表情包使用说明',
+                    content: '如需发表情，格式是 [表情:名字]，名字必须严格从下面清单里选：\n{{EMOJI_LIST}}\n可用表情 = 全局表情 + 该角色绑定的表情（合并去重）。选不出合适的就不发，用文字表达即可。',
+                },
+                voice: {
+                    name: '语音消息说明',
+                    content: '用户消息前带 [语音] 前缀时，表示用户是用语音说的这段话。\n可以自然回应"听到你的语音"或"你说"，不必刻意强调。',
+                },
+                image: {
+                    name: '图片消息说明',
+                    content: '用户消息前带 [用户发送了一张图片] 前缀时，表示用户发来了一张图片，前缀后面的文字是系统自动识图的结果，不是用户亲手写的描述。\n请把这段描述当作图片内容本身来理解和回应，不要误以为用户在替你描述画面。',
+                },
+            };
+
+            document.querySelectorAll('[data-preset]').forEach(btn => {
+                if (btn.dataset.__bound) return;
+                btn.dataset.__bound = '1';
+                btn.addEventListener('click', () => {
+                    const p = presetTexts[btn.dataset.preset];
+                    if (!p) return;
+                    document.getElementById('wbName').value = p.name;
+                    document.getElementById('wbContent').value = p.content;
+                });
+            });
+
+            // 分组新建（只绑一次）
+            if (!groupEl.dataset.__bound) {
+                groupEl.dataset.__bound = '1';
+                groupEl.addEventListener('change', () => {
+                    if (groupEl.value === '__new__') {
+                        const newGroup = prompt('输入新分组名称：');
+                        if (newGroup && newGroup.trim()) {
+                            const g = newGroup.trim();
+                            if (!data.wbGroups.includes(g)) {
+                                data.wbGroups.push(g);
+                                saveData();
+                            }
+                            groupEl.innerHTML = data.wbGroups.map(gr =>
+                                `<option value="${escHtml(gr)}" ${gr === g ? 'selected' : ''}>${escHtml(gr)}</option>`
+                            ).join('') + `<option value="__new__">+ 新建分组</option>`;
+                            groupEl.value = g;
+                        } else {
+                            groupEl.value = data.wbGroups[0] || '默认';
                         }
-                        groupSelect.innerHTML = data.wbGroups.map(gr => `
-                            <option value="${escHtml(gr)}" ${gr === g ? 'selected' : ''}>${escHtml(gr)}</option>
-                        `).join('') + `<option value="__new__">+ 新建分组</option>`;
-                        groupSelect.value = g;
+                    }
+                });
+            }
+
+            // 取消（只绑一次）
+            const cancelBtn = document.getElementById('wbEditCancel');
+            if (cancelBtn && !cancelBtn.dataset.__bound) {
+                cancelBtn.dataset.__bound = '1';
+                cancelBtn.addEventListener('click', () => showPage('worldbook'));
+            }
+
+            // 保存（只绑一次）
+            const saveBtn = document.getElementById('wbEditSave');
+            if (saveBtn && !saveBtn.dataset.__bound) {
+                saveBtn.dataset.__bound = '1';
+                saveBtn.addEventListener('click', () => {
+                    const name = document.getElementById('wbName').value.trim();
+                    const content = document.getElementById('wbContent').value.trim();
+                    const group = document.getElementById('wbGroup').value;
+                    if (!name) { alert('请填写名称'); return; }
+                    if (!content) { alert('请填写内容'); return; }
+
+                    const finalGroup = group === '__new__' ? '默认' : group;
+                    const currentWbId = editingWbId;
+
+                    if (currentWbId) {
+                        const idx = data.worldBooks.findIndex(w => w.id === currentWbId);
+                        if (idx > -1) {
+                            data.worldBooks[idx] = {
+                                ...data.worldBooks[idx],
+                                name, content,
+                                group: finalGroup,
+                                updatedAt: Date.now(),
+                            };
+                        }
                     } else {
-                        groupSelect.value = data.wbGroups[0] || '默认';
-                    }
-                }
-            });
-
-            document.getElementById('modalCancel').addEventListener('click', () => {
-                modalMask.classList.remove('open');
-            });
-
-            document.getElementById('modalSave').addEventListener('click', () => {
-                const name = document.getElementById('wbName').value.trim();
-                const content = document.getElementById('wbContent').value.trim();
-                const group = document.getElementById('wbGroup').value;
-                if (!name) { alert('请填写名称'); return; }
-                if (!content) { alert('请填写内容'); return; }
-
-                const finalGroup = group === '__new__' ? '默认' : group;
-
-                if (isEdit) {
-                    const idx = data.worldBooks.findIndex(w => w.id === wbId);
-                    if (idx > -1) {
-                        data.worldBooks[idx] = {
-                            ...data.worldBooks[idx],
-                            name,
-                            content,
+                        data.worldBooks.push({
+                            id: generateId(),
+                            name, content,
                             group: finalGroup,
-                            updatedAt: Date.now(),
-                        };
+                            isGlobal: false,
+                            isActive: true,
+                            createdAt: Date.now(),
+                        });
                     }
-                } else {
-                    data.worldBooks.push({
-                        id: generateId(),
-                        name,
-                        content,
-                        group: finalGroup,
-                        isGlobal: false,
-                        isActive: true,
-                        createdAt: Date.now(),
-                    });
-                }
-                saveData();
-                modalMask.classList.remove('open');
-                renderWorldBooks();
-            });
+                    saveData();
+                    renderWorldBooks();
+                    showPage('worldbook');
+                });
+            }
         }
 
         // ============================================================
@@ -5477,9 +5978,9 @@
             const seedSessionId = generateId();
             data.characters.push({
                 id: charId,
-                name: '小治愈',
-                note: '温柔的朋友',
-                setting: '你是一个温柔、善解人意的朋友，喜欢用温暖的话语安慰他人。说话风格柔和，常用"～"和"呢"。',
+                name: '小测试助手',
+                note: '功能测试用',
+                setting: '你是一个测试助手，用于演示语匣的各项功能。回复时自然使用动作描写、表情等。',
                 worldBooks: [],
                 emojis: [],
                 apiId: '',
@@ -5488,13 +5989,17 @@
                 updatedAt: Date.now(),
             });
             data.chats[seedSessionId] = [
-                { role: 'assistant', content: '（轻轻挥手）你好呀～ 我是小治愈，今天心情怎么样？', timestamp: Date.now() - 3600000 },
-                { role: 'user', content: '今天有点累呢…', timestamp: Date.now() - 3000000 },
-                { role: 'assistant', content: '（歪了歪头）辛苦了～\n记得照顾好自己\n累了就歇一歇\n我在这里陪你呢。', think: '用户说「有点累」，需要共情 + 轻度安慰。语气要柔软，用「～」收尾，不追问原因以免增加压力，给一个可执行的小建议（歇一歇）。', timestamp: Date.now() - 2400000 },
-                { role: 'user', content: '其实也不算太累\n就是加班有点烦\n老板今天又加需求了', timestamp: Date.now() - 1800000 },
-                { role: 'assistant', content: '（皱了皱眉）啊，加班确实容易心烦呢～\n老板加需求这种事，真的会让人无奈。\n（笑着看你）不过你已经撑到现在了，很厉害了哦！\n要不要休息一下，喝杯水？', think: '用户倾诉加班和老板加需求，这是情绪累积。先共情认可情绪（确实烦），再肯定用户的努力（撑到现在很厉害），最后给一个轻松的小建议（喝水休息）。分四段说，节奏不压迫。', timestamp: Date.now() - 1200000 },
-                { role: 'user', content: '嗯…你说得对\n谢谢小治愈！', timestamp: Date.now() - 600000 },
-                { role: 'assistant', content: '（眨了眨眼）不客气～\n随时来找我聊天\n（轻声）我一直都在的 🌿', timestamp: Date.now() - 300000 },
+                { role: 'assistant', content: '（挥手示意）小测试助手已就位。下面演示各项功能。', timestamp: Date.now() - 600000 },
+                { role: 'user', content: '这个是测试文本1', timestamp: Date.now() - 550000 },
+                { role: 'assistant', content: '收到，这是测试文本2。', timestamp: Date.now() - 500000 },
+                { role: 'user', content: '这个是测试语音一', isVoice: true, timestamp: Date.now() - 450000 },
+                { role: 'assistant', content: '（侧耳倾听）听到你的语音了。', timestamp: Date.now() - 400000 },
+                { role: 'user', content: '这个是测试思考过程。', timestamp: Date.now() - 350000 },
+                { role: 'assistant', content: '好的，思考过程已记录。', think: '用户想测试思考过程功能。这条回复带 think 字段，点「偷偷看看ta在想什么」即可展开查看。', timestamp: Date.now() - 300000 },
+                { role: 'user', content: '这个是测试表情包占位', timestamp: Date.now() - 250000 },
+                { role: 'assistant', content: '[表情:测试表情]', timestamp: Date.now() - 200000 },
+                { role: 'user', content: '这个是测试动作描述。', timestamp: Date.now() - 150000 },
+                { role: 'assistant', content: '（点了点头，表示收到。）', timestamp: Date.now() - 100000 },
             ];
             // 示例世界书
             data.worldBooks.push({
@@ -5514,6 +6019,30 @@
                 isGlobal: false,
                 isActive: true,
                 createdAt: Date.now(),
+            });
+            data.worldBooks.push({
+                id: generateId(),
+                name: '动作描写',
+                content: '在回复中，可以用全角括号（）描写角色的动作、神态或心理活动。\n括号内容会以旁白形式独立显示，不占用对话气泡。\n\n示例：\n（轻轻笑了笑）你好呀，今天过得怎么样？\n（歪头看着你）在发呆吗？\n\n规则：\n- 只用全角括号（），不要用半角 ()\n- 括号内容一句话以内，简洁为上\n- 可以在说话前或说话后描写，但不要每句都加\n- 动作描写要与情境和角色性格相符',
+                group: '默认', isGlobal: true, isActive: true, createdAt: Date.now(),
+            });
+            data.worldBooks.push({
+                id: generateId(),
+                name: '表情包使用说明',
+                content: '如需发表情，格式是 [表情:名字]，名字必须严格从下面清单里选：\n{{EMOJI_LIST}}\n可用表情 = 全局表情 + 该角色绑定的表情（合并去重）。选不出合适的就不发，用文字表达即可。',
+                group: '默认', isGlobal: true, isActive: true, createdAt: Date.now(),
+            });
+            data.worldBooks.push({
+                id: generateId(),
+                name: '语音消息说明',
+                content: '用户消息前带 [语音] 前缀时，表示用户是用语音说的这段话。\n可以自然回应"听到你的语音"或"你说"，不必刻意强调。',
+                group: '默认', isGlobal: true, isActive: true, createdAt: Date.now(),
+            });
+            data.worldBooks.push({
+                id: generateId(),
+                name: '图片消息说明',
+                content: '用户消息前带 [用户发送了一张图片] 前缀时，表示用户发来了一张图片，前缀后面的文字是系统自动识图的结果，不是用户亲手写的描述。\n请把这段描述当作图片内容本身来理解和回应，不要误以为用户在替你描述画面。',
+                group: '默认', isGlobal: true, isActive: true, createdAt: Date.now(),
             });
             saveData();
         }
@@ -5546,7 +6075,31 @@
                 });
             });
         })();
+        // 弹窗打开时：禁用毛玻璃 + 锁死手机高度，防止键盘顶移背景
+        (function bindModalPerf() {
+            const mask = document.getElementById('modalMask');
+            if (!mask) return;
+            const phone = document.querySelector('.phone');
+            const sync = () => {
+                const isOpen = mask.classList.contains('open');
+                document.body.classList.toggle('modal-open', isOpen);
+                if (!phone) return;
+                if (isOpen && !phone.dataset.__lockedH) {
+                    const h = window.innerHeight || document.documentElement.clientHeight;
+                    phone.dataset.__lockedH = String(h);
+                    phone.style.height = h + 'px';
+                    phone.style.maxHeight = h + 'px';
+                } else if (!isOpen && phone.dataset.__lockedH) {
+                    phone.style.height = '';
+                    phone.style.maxHeight = '';
+                    delete phone.dataset.__lockedH;
+                }
+            };
+            new MutationObserver(sync).observe(mask, { attributes: true, attributeFilter: ['class'] });
+            sync();
+        })();
         renderSettings();
+        bindEmojiEditForm();
         renderChars();
         renderWorldBooks();
         renderWall();
