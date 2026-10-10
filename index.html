@@ -191,14 +191,22 @@
             margin-top: auto;
             padding: 14px 14px;
             border-radius: 24px;
-            background: rgba(255, 255, 255, 0.14);
-            backdrop-filter: blur(8px) saturate(180%) brightness(1.05);
-            -webkit-backdrop-filter: blur(8px) saturate(180%) brightness(1.05);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            background:
+                linear-gradient(135deg,
+                    rgba(255,255,255,0.08) 0%,
+                    rgba(255,255,255,0) 40%,
+                    rgba(255,255,255,0) 60%,
+                    rgba(255,255,255,0.05) 100%),
+                rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(1.5px) saturate(220%) contrast(1.12) brightness(1.02);
+            -webkit-backdrop-filter: blur(1.5px) saturate(220%) contrast(1.12) brightness(1.02);
+            border: 1px solid rgba(255, 255, 255, 0.28);
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.95),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.35),
-                0 12px 32px -18px rgba(36, 72, 100, 0.25);
+                inset 0 1.5px 0 rgba(255, 255, 255, 1),
+                inset 1.5px 0 0 rgba(255, 255, 255, 0.6),
+                inset -1px 0 0 rgba(255, 255, 255, 0.25),
+                inset 0 0 30px rgba(255, 255, 255, 0.12),
+                0 18px 48px -22px rgba(36, 72, 100, 0.08);
         }
 
         .app-icon {
@@ -703,17 +711,22 @@
         }
         .chat-messages .msg.user {
             align-self: flex-end;
-            background: var(--bubble-user);
+            background:
+                radial-gradient(ellipse at center,
+                    rgba(255,255,255,0) 0%,
+                    rgba(255,255,255,0) 62%,
+                    rgba(255,255,255,0.55) 100%
+                ),
+                var(--bubble-user);
             -webkit-backdrop-filter: blur(18px) saturate(160%);
             backdrop-filter: blur(18px) saturate(160%);
             border: 1px solid var(--accent);
             border-color: color-mix(in srgb, var(--accent) 55%, transparent);
             color: #fff;
             box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.35),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.06),
-                0 6px 16px -6px rgba(36, 72, 100, 0.4),
-                0 2px 5px -2px rgba(36, 72, 100, 0.2);
+                inset 0 0 24px rgba(255, 255, 255, 0.35),
+                inset 0 1.5px 0 rgba(255, 255, 255, 0.7),
+                0 6px 16px -6px rgba(36, 72, 100, 0.1);
         }
         .chat-messages .msg.assistant {
             align-self: flex-start;
@@ -724,8 +737,7 @@
             color: var(--ink);
             box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.9),
-                0 6px 16px -6px rgba(36, 72, 100, 0.18),
-                0 2px 5px -2px rgba(36, 72, 100, 0.12);
+                0 6px 16px -6px rgba(36, 72, 100, 0.08);
         }
         .chat-messages .msg.system {
             align-self: center;
@@ -2202,7 +2214,7 @@ body.keyboard-open .chat-input-bar {
                     </div>
                     <div class="app-icon" data-page="diary" id="diaryLauncher">
                         <div class="icon-circle">
-                            <svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
+                            <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8.62 9.8A2.25 2.25 0 1 1 12 6.836a2.25 2.25 0 1 1 3.38 2.966l-2.626 2.856a.998.998 0 0 1-1.507 0z"/></svg>
                         </div>
                     </div>
                     <div class="app-icon app-icon-ghost"></div>
@@ -2763,16 +2775,16 @@ body.keyboard-open .chat-input-bar {
                         <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         <span>返回</span>
                     </div>
-                    <span class="title">日记</span>
+                    <span class="title">笔记</span>
                     <div class="right-action" style="visibility:hidden;">
                         <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
                     </div>
                 </div>
                 <div class="app-body">
                     <div class="empty-state" style="padding-top:80px;">
-                        <svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M8.62 9.8A2.25 2.25 0 1 1 12 6.836a2.25 2.25 0 1 1 3.38 2.966l-2.626 2.856a.998.998 0 0 1-1.507 0z"/></svg>
                         <p>待制作</p>
-                        <p style="font-size:12px;opacity:0.6;margin-top:6px;">Supabase 日记展示</p>
+                        <p style="font-size:12px;opacity:0.6;margin-top:6px;">VPS 存储就绪后接入</p>
                     </div>
                 </div>
             </div>
