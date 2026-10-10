@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>语匣 v29 · AI 互动</title>
     <link rel="icon" type="image/png" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
     <link rel="apple-touch-icon" href="https://catopus.548545.xyz/storage/v1/object/public/stickers/momoekatari.png" />
@@ -12,6 +12,13 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            touch-action: pan-x pan-y;
+            overflow-x: hidden;
         }
 
         :root {
@@ -27,7 +34,7 @@
             --radius: 20px;
             --radius-sm: 12px;
             --chat-dim: 40;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font: system-ui, sans-serif, Roboto, -apple-system, 'PingFang SC', 'Microsoft YaHei';
         }
 
         body {
@@ -40,6 +47,12 @@
             margin: 0;
             padding: 20px;
             color: var(--ink);
+            overflow-x: hidden;
+            overflow-y: hidden;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
         /* ===== 手机外壳 ===== */
@@ -285,6 +298,9 @@
             flex-shrink: 0;
             border-bottom: 1px solid var(--line);
             background: var(--paper);
+            position: sticky;
+            top: 0;
+            z-index: 15;
         }
         .chat-header {
             display: flex;
@@ -468,7 +484,7 @@
         select,
         textarea {
             font-family: var(--font);
-            font-size: 14px;
+            font-size: 16px;
             color: var(--ink);
             background: var(--bg);
             border: 1px solid var(--line);
@@ -917,7 +933,7 @@
             border-radius: 30px;
             background: var(--bg);
             border: 1px solid var(--line);
-            font-size: 14px;
+            font-size: 16px;
             width: 100%;
             outline: none;
             transition: border-color 0.2s;
@@ -1217,12 +1233,18 @@
                 padding: 0;
                 background: var(--paper);
                 align-items: stretch;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                position: fixed;
+                inset: 0;
             }
             .phone {
                 width: 100%;
-                height: 100vh;
+                height: 100%;
                 border-radius: 0;
                 box-shadow: none;
+                overflow: hidden;
             }
             .status-bar {
                 padding: 0 20px;
@@ -2112,6 +2134,21 @@ body.modal-open .chat-messages .msg.assistant {
         .todo-item-del:active {
             opacity: 0.9;
         }
+/* 键盘弹起时：给当前激活页面的滚动容器撑出真实滚动空间（短内容也能滚） */
+body.keyboard-open .app-page.active .app-body {
+    padding-bottom: calc(20px + var(--kb-height, 0px));
+    scroll-padding-bottom: var(--kb-height, 0px);
+}
+body.keyboard-open .app-page.active .app-body::after {
+    content: '';
+    display: block;
+    height: 100%;
+    pointer-events: none;
+}
+/* 聊天输入栏：键盘弹起时底部撑高，让输入框浮到键盘上方 */
+body.keyboard-open .chat-input-bar {
+    padding-bottom: calc(14px + var(--kb-height, 0px));
+}
     </style>
 </head>
 <body>
@@ -2123,9 +2160,9 @@ body.modal-open .chat-messages .msg.assistant {
         <div class="status-bar">
             <span class="time" id="statusTime">9:41</span>
             <div class="status-icons">
-                <svg viewBox="0 0 24 24"><path d="M1 9l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 5l8 8" stroke-linecap="round"/><path d="M17 13l6-6" stroke-linecap="round"/></svg>
-                <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="2" stroke-linecap="round"/><path d="M22 11h-2" stroke-linecap="round"/></svg>
-                <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" stroke-linecap="round"/><path d="M8 12h8" stroke-linecap="round"/><path d="M12 8v8" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M2 20h.01" stroke-linecap="round"/><path d="M7 20v-4" stroke-linecap="round"/><path d="M12 20v-8" stroke-linecap="round"/><path d="M17 20V8" stroke-linecap="round"/><path d="M22 4v16" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 20h.01" stroke-linecap="round"/><path d="M2 8.82a15 15 0 0 1 20 0" stroke-linecap="round"/><path d="M5 12.859a10 10 0 0 1 14 0" stroke-linecap="round"/><path d="M8.5 16.429a5 5 0 0 1 7 0" stroke-linecap="round"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M22 14 L22 10" stroke-linecap="round"/><rect x="2" y="6" width="16" height="12" rx="2"/></svg>
             </div>
         </div>
 
@@ -2517,6 +2554,7 @@ body.modal-open .chat-messages .msg.assistant {
                             <button type="button" class="btn btn-sm btn-soft" data-preset="emoji" style="width:100%;">载入：表情说明</button>
                             <button type="button" class="btn btn-sm btn-soft" data-preset="voice" style="width:100%;">载入：语音说明</button>
                             <button type="button" class="btn btn-sm btn-soft" data-preset="image" style="width:100%;">载入：图片说明</button>
+                            <button type="button" class="btn btn-sm btn-soft" data-preset="kaomoji" style="width:100%;">载入：颜文字说明</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -6158,6 +6196,10 @@ body.modal-open .chat-messages .msg.assistant {
                     name: '图片消息说明',
                     content: '用户消息前带 [用户发送了一张图片] 前缀时，表示用户发来了一张图片，前缀后面的文字是系统自动识图的结果，不是用户亲手写的描述。\n请把这段描述当作图片内容本身来理解和回应，不要误以为用户在替你描述画面。',
                 },
+                kaomoji: {
+                    name: '颜文字说明',
+                    content: '允许使用全角括号包裹的颜文字（如（＾ω＾）（・∀・）（｡･ω･｡）等）。\n颜文字属于对话内容，前端会按非汉字占比识别，不会拆为旁白。\n发送颜文字时不必额外加动作描写，直接放在对话文本里即可。',
+                },
             };
 
             document.querySelectorAll('[data-preset]').forEach(btn => {
@@ -6569,6 +6611,35 @@ body.modal-open .chat-messages .msg.assistant {
             new MutationObserver(sync).observe(mask, { attributes: true, attributeFilter: ['class'] });
             sync();
         })();
+
+        // 键盘感知：覆盖页面模式下，动态给当前页面的滚动容器加底部占位
+        (function bindKeyboardAwareScroll() {
+            const vv = window.visualViewport;
+            if (!vv) return;   // 老设备不支持 visualViewport，静默跳过（不影响其它功能）
+            let __raf = null;
+
+            const sync = () => {
+                const kbHeight = Math.max(0, window.innerHeight - vv.height);
+                const isOpen = kbHeight > 120;   // 阈值：键盘通常 > 250px，地址栏/工具栏波动 < 100px
+                if (isOpen) {
+                    document.documentElement.style.setProperty('--kb-height', kbHeight + 'px');
+                    document.body.classList.add('keyboard-open');
+                } else {
+                    document.body.classList.remove('keyboard-open');
+                    document.documentElement.style.removeProperty('--kb-height');
+                }
+            };
+
+            const schedule = () => {
+                if (__raf) return;
+                __raf = requestAnimationFrame(() => { __raf = null; sync(); });
+            };
+
+            vv.addEventListener('resize', schedule);
+            vv.addEventListener('scroll', schedule);
+            sync();
+        })();
+
         renderSettings();
         bindEmojiEditForm();
         renderChars();
