@@ -1967,6 +1967,42 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
 
+/* 用户消息角标：HH:mm + 双勾 */
+.chat-messages .msg-row.user .msg-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    opacity: 0.55;
+    margin-top: 4px;
+    padding-right: 6px;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.chat-messages .msg-row.user .msg-meta svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    fill: none;
+}
+/* 跨天日期分隔 */
+.chat-messages .msg-row.date-sep {
+    justify-content: center;
+    margin: 16px 0 10px;
+}
+.chat-messages .msg-row.date-sep span {
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 0.65;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 2px 12px;
+    border-radius: 10px;
+    letter-spacing: 0.3px;
+}
+
 .chat-messages .msg-bridge-toggle {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.85);
@@ -2127,7 +2163,11 @@ body.modal-open .chat-messages .msg.assistant {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/></svg>
                         </div>
                     </div>
-                    <div class="app-icon app-icon-ghost"></div>
+                    <div class="app-icon" data-page="diary" id="diaryLauncher">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
+                        </div>
+                    </div>
                     <div class="app-icon app-icon-ghost"></div>
                     <div class="app-icon app-icon-ghost"></div>
                     <div class="app-icon app-icon-ghost"></div>
@@ -2261,6 +2301,24 @@ body.modal-open .chat-messages .msg.assistant {
                         <div style="display:flex;align-items:center;gap:10px;">
                             <input type="number" id="contextLimitInput" min="0" max="100" value="10" style="width:80px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;color:var(--ink);background:rgba(255,255,255,0.5);" />
                             <span class="text-muted" style="font-size:12px;">传给 API 的历史消息条数（0 = 不限制）</span>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:10px;">时间戳注入</div>
+                        <div class="text-muted" style="font-size:12px;margin-bottom:8px;">给 AI 注入当前时间，AI 能感知"现在几点"、"聊了多久"</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                                <input type="radio" name="timeInjectMode" value="off" style="width:auto;flex-shrink:0;margin:0;" />
+                                <span>关闭</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                                <input type="radio" name="timeInjectMode" value="latest" style="width:auto;flex-shrink:0;margin:0;" />
+                                <span>仅最新（不落盘，缓存最优）</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                                <input type="radio" name="timeInjectMode" value="all" style="width:auto;flex-shrink:0;margin:0;" />
+                                <span>每条（落盘，AI 可感知时间间隔）</span>
+                            </label>
                         </div>
                     </div>
                     <div class="card" style="margin-bottom:12px;">
@@ -2660,6 +2718,27 @@ body.modal-open .chat-messages .msg.assistant {
                 </div>
             </div>
 
+            <!-- ===== 日记页面（占位） ===== -->
+            <div class="app-page" id="page-diary">
+                <div class="app-header">
+                    <div class="back" data-back>
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5" stroke-linecap="round"/><path d="M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>返回</span>
+                    </div>
+                    <span class="title">日记</span>
+                    <div class="right-action" style="visibility:hidden;">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14" stroke-linecap="round"/><path d="M5 12h14" stroke-linecap="round"/></svg>
+                    </div>
+                </div>
+                <div class="app-body">
+                    <div class="empty-state" style="padding-top:80px;">
+                        <svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></svg>
+                        <p>待制作</p>
+                        <p style="font-size:12px;opacity:0.6;margin-top:6px;">Supabase 日记展示</p>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- /screen -->
     </div><!-- /phone -->
 
@@ -2728,6 +2807,8 @@ body.modal-open .chat-messages .msg.assistant {
                 contextLimit: 10,
                 maxTokens: 800,
                 chatWallpaperDim: 40,
+                showReadMark: true,
+                timeInjectMode: 'latest',
                 desktopCardStyle: 'glass',
                 desktopCardColor: '#cccccc',
             };
@@ -2889,6 +2970,20 @@ body.modal-open .chat-messages .msg.assistant {
             return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         }
 
+        function formatTimestampTag(ts) {
+            const d = new Date(ts || Date.now());
+            const parts = new Intl.DateTimeFormat('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false,
+                weekday: 'short'
+            }).formatToParts(d);
+            const get = (t) => parts.find(p => p.type === t)?.value || '';
+            const y = get('year'), mo = get('month'), dd = get('day');
+            const h = get('hour'), mi = get('minute'), wd = get('weekday');
+            return `${y}-${mo}-${dd} ${h}:${mi} ${wd}`;
+        }
+
         // ============================================================
         //  状态管理
         // ============================================================
@@ -2923,6 +3018,7 @@ body.modal-open .chat-messages .msg.assistant {
             'api': $('#page-api'),
             worldbook: $('#page-worldbook'),
             emoji: $('#page-emoji'),
+            diary: $('#page-diary'),
         };
         const apiListEl = $('#apiList');
         const apiEmpty = $('#apiEmpty');
@@ -2988,6 +3084,7 @@ body.modal-open .chat-messages .msg.assistant {
                 else if (page === 'worldbook') showPage('worldbook');
                 else if (page === 'emoji') showPage('emoji');
                 else if (page === 'api') showPage('api');
+                else if (page === 'diary') showPage('diary');
             });
         });
 
@@ -3500,6 +3597,19 @@ body.modal-open .chat-messages .msg.assistant {
             if (cl) cl.value = (data.contextLimit === 0 || data.contextLimit) ? data.contextLimit : 10;
             const mt = document.getElementById('maxTokensInput');
             if (mt) mt.value = (data.maxTokens || 800);
+
+            document.querySelectorAll('input[name="timeInjectMode"]').forEach(el => {
+                el.checked = (el.value === (data.timeInjectMode || 'latest'));
+                if (!el.dataset.__bound) {
+                    el.dataset.__bound = '1';
+                    el.addEventListener('change', () => {
+                        if (el.checked) {
+                            data.timeInjectMode = el.value;
+                            saveData();
+                        }
+                    });
+                }
+            });
 
             const slot = document.getElementById('bubbleBlurCardSlot');
             if (slot) {
@@ -4410,7 +4520,7 @@ body.modal-open .chat-messages .msg.assistant {
             let sid = sessionId;
             const sessions = Array.isArray(ch.sessions) ? ch.sessions : [];
             if (!sid || !sessions.find(s => s.id === sid)) {
-                if (sessions.length) sid = sessions.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0].id;
+                if (sessions.length) sid = [...sessions].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))[0].id;
                 else {
                     sid = generateId();
                     data.chats[sid] = [];
@@ -4530,6 +4640,13 @@ body.modal-open .chat-messages .msg.assistant {
                 : escHtml((c && c.name ? c.name.charAt(0) : 'AI'));
             const hasThink = (m) => !!(m.think && String(m.think).trim());
 
+            // 用户消息角标 HTML
+            function __readMarkHtml(m) {
+                if (!data.showReadMark) return '';
+                if (!m || m.role !== 'user') return '';
+                return `<div class="msg-meta">${formatTime(m.timestamp)}<svg viewBox="0 0 24 24"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg></div>`;
+            }
+
             // 表情清单提到循环外预先算好（避免每条消息重算）
             const __charEmojiIds = ch ? (ch.emojis || []) : [];
             const __availableEmojis2 = [
@@ -4539,7 +4656,15 @@ body.modal-open .chat-messages .msg.assistant {
                 ].map(e => [e.id, e])).values()
             ];
 
-            const __total = msgs.length;
+            // 剥掉 <time> 标签后的显示版本（用于渲染，不改动 data.chats）
+            const __msgsForDisplay = msgs.map(m => {
+                if (m && typeof m.content === 'string' && /<time>/.test(m.content)) {
+                    return { ...m, content: m.content.replace(/<time>[^<]*<\/time>/g, '') };
+                }
+                return m;
+            });
+
+            const __total = __msgsForDisplay.length;
             // 渲染窗口：不小于一个批次、不超过消息总数，起点不越界
             const __visible = Math.min(Math.max(__renderCount, RENDER_BATCH), __total);
             const __start = Math.max(0, __total - __visible);
@@ -4548,10 +4673,33 @@ body.modal-open .chat-messages .msg.assistant {
             if (__start > 0) {
                 __moreHtml = `<div id="loadEarlierBtn" style="text-align:center;padding:10px 0 6px;cursor:pointer;color:var(--ink-soft);font-size:13px;user-select:none;">查看更早的消息</div>`;
             }
-            chatMessages.innerHTML = __moreHtml + msgs.slice(__start).map((m, localIdx) => {
+            chatMessages.innerHTML = __moreHtml + __msgsForDisplay.slice(__start).map((m, localIdx) => {
                 const idx = __start + localIdx;   // ← 关键：全局索引
+
+                // 跨天日期分隔
+                const __mkDateKey = (ts) => {
+                    const d = new Date(ts);
+                    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+                };
+                const __prevMsg = __msgsForDisplay[idx - 1];
+                const __needDateSep = !__prevMsg || __mkDateKey(__prevMsg.timestamp) !== __mkDateKey(m.timestamp);
+                const __dateSepHtml = __needDateSep ? (() => {
+                    const d = new Date(m.timestamp);
+                    const now = new Date();
+                    const y = d.getFullYear(), mo = d.getMonth(), dd = d.getDate();
+                    const isToday = y === now.getFullYear() && mo === now.getMonth() && dd === now.getDate();
+                    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+                    const isYesterday = y === yesterday.getFullYear() && mo === yesterday.getMonth() && dd === yesterday.getDate();
+                    let label;
+                    if (isToday) label = '今天';
+                    else if (isYesterday) label = '昨天';
+                    else label = (mo + 1) + '月' + dd + '日';
+                    return `<div class="msg-row date-sep"><span>${label}</span></div>`;
+                })() : '';
+                const __prefix = __dateSepHtml;
+
                 if (m.role === 'system') {
-                    return `<div class="msg-row system"><div class="msg system">${escHtml(m.content)}</div></div>`;
+                    return __prefix + `<div class="msg-row system"><div class="msg system">${escHtml(m.content)}</div></div>`;
                 }
                 // 兼容老数据：只有桥接前缀、没有 imageData 的历史消息
                 // 剥离前缀后当普通用户文本消息渲染（历史描述不折叠，避免用户还得手动点开）
@@ -4560,12 +4708,12 @@ body.modal-open .chat-messages .msg.assistant {
                     const __avInner = data.userAvatar
                         ? `<img src="${escHtml(data.userAvatar)}" alt="我" onerror="this.parentNode.textContent='我'" />`
                         : '我';
-                    return `<div class="msg-row user" data-msg-idx="${idx}"><div class="msg-avatar">${__avInner}</div><div class="msg-bubble-wrap"><div class="msg user">${escHtml(__descText)}</div></div></div>`;
+                    return __prefix + `<div class="msg-row user" data-msg-idx="${idx}"><div class="msg-avatar">${__avInner}</div><div class="msg-bubble-wrap"><div class="msg user">${escHtml(__descText)}</div>${__readMarkHtml(m)}</div></div>`;
                 }
                 const isUser = m.role === 'user';
                 const cls = isUser ? 'user' : 'assistant';
                 // 同一人连续消息：上一条非 system 且 role 相同 → 间距紧凑
-                const prev = msgs[idx - 1];
+                const prev = __msgsForDisplay[idx - 1];
                 const sameSender = prev && prev.role !== 'system' && prev.role === m.role;
                 const rowCls = sameSender ? `${cls} same-sender` : cls;
 
@@ -4578,7 +4726,7 @@ body.modal-open .chat-messages .msg.assistant {
                 const thinkHint = (!isUser && hasThink(m))
                     ? `<div class="think-hint" data-msg-idx="${idx}">${ICONS.think} 偷偷看看ta在想什么？</div>`
                     : '';
-                const extraHints = thinkHint;
+                const extraHints = thinkHint + __readMarkHtml(m);
 
                 // 用户图片消息：先渲染图片气泡
                 if (isUser && m.imageData) {
@@ -4598,13 +4746,14 @@ body.modal-open .chat-messages .msg.assistant {
                             inner += `<div class="msg ${cls}" style="margin-top:4px;">${escHtml(textPart)}</div>`;
                         }
                     }
+                    inner += __readMarkHtml(m);
                     inner += `</div>`;
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}${inner}</div>`;
+                    return __prefix + `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}${inner}</div>`;
                 }
 
                 // 流式消息：保留单个大气泡实时显示（性能 + 视觉连贯）
                 if (m.streaming) {
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
+                    return __prefix + `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls} streaming"><span class="typing-dots"><i></i><i></i><i></i></span></div></div></div>`;
                 }
 
                 // 语音 / 表情包：不拆分，整条渲染
@@ -4623,7 +4772,7 @@ body.modal-open .chat-messages .msg.assistant {
                         '<svg class="voice-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
                         '</div>' +
                         '<div class="voice-text" style="display:none;">' + escHtml(m.content) + '</div>';
-                    return '<div class="msg-row ' + rowCls + '" data-msg-idx="' + idx + '">' +
+                    return __prefix + '<div class="msg-row ' + rowCls + '" data-msg-idx="' + idx + '">' +
                         avatarDiv +
                         '<div class="msg-bubble-wrap">' + bubbleHtml + '</div>' +
                         '</div>';
@@ -4633,7 +4782,7 @@ body.modal-open .chat-messages .msg.assistant {
                 const paras = String(m.content || '').split(/\n+/).filter(p => p.trim() !== '');
                 if (!paras.length) {
                     // 防御：空内容也要有个占位气泡
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
+                    return __prefix + `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
                 }
                 // 每段先 parseEmojiSegments 拆成片段，再各自生成气泡；最后一片段挂 extraHints
                 const allSegs = [];
@@ -4653,7 +4802,7 @@ body.modal-open .chat-messages .msg.assistant {
                     }
                 });
                 if (!allSegs.length) {
-                    return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
+                    return __prefix + `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}"> </div>${extraHints}</div></div>`;
                 }
                 const rows = allSegs.map((seg, i) => {
                     const last = (i === allSegs.length - 1) ? extraHints : '';
@@ -4666,7 +4815,7 @@ body.modal-open .chat-messages .msg.assistant {
                     }
                     return `<div class="msg-row ${rowCls}" data-msg-idx="${idx}">${avatarDiv}<div class="msg-bubble-wrap"><div class="msg ${cls}">${escHtml(seg.text)}</div>${last}</div></div>`;
                 }).join('');
-                return rows;
+                return __prefix + rows;
             }).join('');
 
             // 「查看更早的消息」按钮：扩大渲染批次并保持视觉位置
@@ -4892,7 +5041,7 @@ body.modal-open .chat-messages .msg.assistant {
             let api = data.apis.find(a => a.id === (ch.apiId || data.currentApiId));
             if (!api) api = data.apis[0];
             if (!api) {
-                addMessage(__snapCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。');
+                addMessage(__snapCharId, 'assistant', '⚠️ 请先在「设置」中添加 API 配置。', {}, __snapSessionId);
                 return;
             }
 
@@ -5110,6 +5259,21 @@ body.modal-open .chat-messages .msg.assistant {
                 });
                 __flushPending();
 
+                // 时间戳注入：latest 模式下，仅对最后一条 user 消息临时拼接（不落盘）
+                if (data.timeInjectMode === 'latest' && messages.length) {
+                    const __lastMsg = messages[messages.length - 1];
+                    if (__lastMsg && __lastMsg.role === 'user') {
+                        const __stamp = '<time>' + formatTimestampTag() + '</time>';
+                        if (typeof __lastMsg.content === 'string') {
+                            __lastMsg.content = __lastMsg.content + __stamp;
+                        } else if (Array.isArray(__lastMsg.content)) {
+                            const __lp = __lastMsg.content[__lastMsg.content.length - 1];
+                            if (__lp && __lp.type === 'text') __lp.text += __stamp;
+                            else __lastMsg.content.push({ type: 'text', text: __stamp });
+                        }
+                    }
+                }
+
                 // 创建流式气泡：边收边显示（微信式逐字出字）
                 streamMsg = { role: 'assistant', content: '', timestamp: Date.now(), streaming: true };
                 (data.chats[__snapSessionId] = data.chats[__snapSessionId] || []).push(streamMsg);
@@ -5235,7 +5399,9 @@ body.modal-open .chat-messages .msg.assistant {
                         await new Promise(resolve => {
                             const start = Date.now();
                             const check = setInterval(() => {
-                                if (__typeQueue.length === 0 || Date.now() - start > 3000) {
+                                // 正常情况：队列清空即 resolve
+                                // 兜底 120 秒：防打字机完全卡死导致 await 永不返回（远大于正常消费耗时）
+                                if (__typeQueue.length === 0 || Date.now() - start > 120000) {
                                     clearInterval(check);
                                     clearInterval(__typeTimer);
                                     __typeTimer = null;
@@ -5339,15 +5505,17 @@ body.modal-open .chat-messages .msg.assistant {
                         if (thinkBuf) streamMsg.think = thinkBuf.trim();
                         delete streamMsg.streaming;
                     } else {
-                        const arr = getCurrentSessionMsgs();
-                        const i = arr.indexOf(streamMsg);
-                        if (i > -1) arr.splice(i, 1);
+                        const arr = data.chats[__snapSessionId];
+                        if (Array.isArray(arr)) {
+                            const i = arr.indexOf(streamMsg);
+                            if (i > -1) arr.splice(i, 1);
+                        }
                     }
                     saveData();
                     __safeRender();
                 }
                 if (!streamed) {
-                    addMessage(__snapCharId, 'assistant', '❌ 请求失败: ' + e.message);
+                    addMessage(__snapCharId, 'assistant', '❌ 请求失败: ' + e.message, {}, __snapSessionId);
                 }
             }
 
@@ -5355,23 +5523,31 @@ body.modal-open .chat-messages .msg.assistant {
             respondBtn.style.opacity = '1';
         }
 
-        function addMessage(charId, role, content, extra = {}) {
-            const msgs = getCurrentSessionMsgs();
+        function addMessage(charId, role, content, extra = {}, sessionId) {
+            const sid = sessionId || currentSessionId;
+            if (!sid) return;
+            if (!Array.isArray(data.chats[sid])) data.chats[sid] = [];
+            const msgs = data.chats[sid];
+            // 时间戳注入：all 模式下，用户消息落盘时拼上 <time>
+            if (role === 'user' && data.timeInjectMode === 'all' && typeof content === 'string' && !/<time>/.test(content)) {
+                content = content + '<time>' + formatTimestampTag() + '</time>';
+            }
             const msg = { role, content, timestamp: Date.now(), ...extra };
             msgs.push(msg);
-            // 更新角色 & 当前会话时间
             const ch = data.characters.find(c => c.id === charId);
             if (ch) ch.updatedAt = Date.now();
             if (ch && Array.isArray(ch.sessions)) {
-                const cur = ch.sessions.find(s => s.id === currentSessionId);
+                const cur = ch.sessions.find(s => s.id === sid);
                 if (cur) cur.updatedAt = Date.now();
             }
             saveData();
-            renderMessages(charId);
-            // 滚动到底部
-            setTimeout(() => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 50);
+            // 仅当当前视图仍是该角色时才渲染，避免切走后污染新视图
+            if (charId === currentCharId) {
+                renderMessages(charId);
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 50);
+            }
         }
 
         // 响应按钮
@@ -6245,7 +6421,7 @@ body.modal-open .chat-messages .msg.assistant {
         }
 
         function escHtml(str) {
-            if (!str) return '';
+            if (str === null || str === undefined || str === '') return '';
             return String(str)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
